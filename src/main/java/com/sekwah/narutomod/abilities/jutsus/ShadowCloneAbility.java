@@ -44,7 +44,9 @@ public class ShadowCloneAbility extends Ability implements Ability.Cooldown {
         ninjaData.scheduleDelayedTickEvent((delayedPlayer) -> {
 
             System.out.println("[+] - Shadow Cone Jutsu launched !");
-            spawnCloneAt(player, player.position(), ninjaData);
+            for(int i=0; i<3; i++) {
+                spawnCloneAt(player, player.position(), ninjaData);
+            }
             System.out.println("[+] - Fini !");
         }, 10);
     }
