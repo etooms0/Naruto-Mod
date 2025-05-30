@@ -10,10 +10,8 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
 
-/**
- * More of a slight speed boost than an actual dash
- */
-public class FireballJutsuAbility extends Ability implements Ability.Cooldown {
+
+public class ShadowCloneAbility extends Ability implements Ability.Cooldown {
 
     @Override
     public ActivationType activationType() {
@@ -22,7 +20,7 @@ public class FireballJutsuAbility extends Ability implements Ability.Cooldown {
 
     @Override
     public long defaultCombo() {
-        return 121;
+        return 1332;
     }
 
     @Override
@@ -37,12 +35,10 @@ public class FireballJutsuAbility extends Ability implements Ability.Cooldown {
 
     @Override
     public void performServer(Player player, INinjaData ninjaData, int ticksActive) {
-            ninjaData.scheduleDelayedTickEvent((delayedPlayer) -> {
-                Vec3 shootSpeed = player.getLookAngle();
-                FireballJutsuEntity fireball = new FireballJutsuEntity(player, shootSpeed.x, shootSpeed.y, shootSpeed.z);
-                player.level().addFreshEntity(fireball);
-                player.level().playSound(null, player, NarutoSounds.FIREBALL_SHOOT.get(), SoundSource.PLAYERS, 1f, 1.0f);
-            }, 10);
+        ninjaData.scheduleDelayedTickEvent((delayedPlayer) -> {
+
+            System.out.println("[+] - Shadow Cone Jutsu launched !");
+        }, 10);
     }
 
     @Override

@@ -3,6 +3,7 @@ package com.sekwah.narutomod.abilities;
 import com.mojang.logging.LogUtils;
 import com.sekwah.narutomod.NarutoMod;
 import com.sekwah.narutomod.abilities.jutsus.FireballJutsuAbility;
+import com.sekwah.narutomod.abilities.jutsus.ShadowCloneAbility;
 import com.sekwah.narutomod.abilities.jutsus.SubstitutionJutsuAbility;
 import com.sekwah.narutomod.abilities.jutsus.WaterBulletJutsuAbility;
 import com.sekwah.narutomod.abilities.utility.ChakraChargeAbility;
@@ -44,6 +45,8 @@ public class NarutoAbilities {
     public static final RegistryObject<WaterWalkAbility> WATER_WALK = ABILITY.register("water_walk", WaterWalkAbility::new);
 
     public static final RegistryObject<FireballJutsuAbility> FIREBALL = ABILITY.register("fireball", FireballJutsuAbility::new);
+
+    public static final RegistryObject<ShadowCloneAbility> SHADOW_CLONE = ABILITY.register("shadow_clone", ShadowCloneAbility::new);
 
     public static final RegistryObject<WaterBulletJutsuAbility> WATER_BULLET = ABILITY.register("water_bullet", WaterBulletJutsuAbility::new);
 
