@@ -43,7 +43,7 @@ public class FireballJutsuAbility extends Ability implements Ability.Cooldown {
                 FireballJutsuEntity fireball = new FireballJutsuEntity(player, shootSpeed.x, shootSpeed.y, shootSpeed.z);
                 player.level().addFreshEntity(fireball);
                 player.level().playSound(null, player, NarutoSounds.FIREBALL_SHOOT.get(), SoundSource.PLAYERS, 1f, 1.0f);
-            }, 10);
+            }, 10 + i * 15);
         }
     }
 
