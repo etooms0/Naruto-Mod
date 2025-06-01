@@ -8,6 +8,7 @@ import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.protocol.game.ClientboundAddEntityPacket;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.phys.Vec3;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.*;
@@ -118,8 +119,15 @@ public class FireballJutsuEntity extends AbstractHurtingProjectile {
 
                 if(fireDamage > 0) {
                     Entity entity1 = this.getOwner();
-                    if(entity1 instanceof LivingEntity) {
-                        entity.hurt(NarutoDamageTypes.getDamageSource(this.level(), NarutoDamageTypes.FIREBALL, this, entity1), fireDamage);
+                    if (entity instanceof LivingEntity livingEntity) {
+                        // Infliger 6 points de dégâts (3 cœurs)
+                        livingEntity.hurt(level().damageSources().explosion(this, this.getOwner()), 6.0F);
+
+                        // Calculer la force de l'explosion
+                        Vec3 knockback = new Vec3(livingEntity.getX() - this.getX(), 0.5, livingEntity.getZ() - this.getZ()).normalize().scale(3);
+
+                        // Appliquer la poussée
+                        livingEntity.setDeltaMovement(knockback);
                     }
                     if (entity1 instanceof LivingEntity) {
                         this.doEnchantDamageEffects((LivingEntity)entity1, entity);

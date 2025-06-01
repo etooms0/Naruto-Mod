@@ -81,7 +81,8 @@ public class WaterBulletJutsuEntity extends AbstractNonGlowingHurtingProjectile 
             Entity entity = p_37216_.getEntity();
             Entity entity1 = this.getOwner();
             //entity.hurt(NarutoDamageTypes.WATER_BULLET.causeWaterBullet(this, entity1), 7.0F);
-            entity.hurt(NarutoDamageTypes.getDamageSource(this.level(), NarutoDamageTypes.WATER_BULLET, this, entity1), 7.0F);
+            //entity.hurt(NarutoDamageTypes.getDamageSource(this.level(), NarutoDamageTypes.WATER_BULLET, this, entity1), 7.0F);
+
             if (entity1 instanceof LivingEntity) {
                 this.doEnchantDamageEffects((LivingEntity)entity1, entity);
             }
@@ -120,7 +121,16 @@ public class WaterBulletJutsuEntity extends AbstractNonGlowingHurtingProjectile 
                         float damage = (float) (5f - (distance / 4f));
                         if(damage > 0) {
                             Entity entity1 = this.getOwner();
-                            entity.hurt(NarutoDamageTypes.getDamageSource(this.level(), NarutoDamageTypes.WATER_BULLET, this, entity1), damage);
+                            if (entity instanceof LivingEntity livingEntity) {
+                                // Infliger 6 points de dégâts (3 cœurs)
+                                livingEntity.hurt(level().damageSources().explosion(this, this.getOwner()), 6.0F);
+
+                                // Calculer la force de l'explosion
+                                Vec3 knockback = new Vec3(livingEntity.getX() - this.getX(), 0.5, livingEntity.getZ() - this.getZ()).normalize().scale(0.5);
+
+                                // Appliquer la poussée
+                                livingEntity.setDeltaMovement(knockback);
+                            }
                             if (entity1 instanceof LivingEntity) {
                                 this.doEnchantDamageEffects((LivingEntity)entity1, entity);
                             }
