@@ -1,21 +1,23 @@
 package com.sekwah.narutomod.client.renderer.entity;
 
 import com.mojang.blaze3d.vertex.PoseStack;
+import com.sekwah.narutomod.client.model.entity.ShadowCloneModel;
 import com.sekwah.narutomod.client.model.entity.SubstitutionLogModel;
 import com.sekwah.narutomod.entity.ShadowCloneEntity;
 import com.sekwah.narutomod.entity.SubstitutionLogEntity;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
-import net.minecraft.client.renderer.entity.MobRenderer;
 import net.minecraft.resources.ResourceLocation;
 
+import net.minecraft.client.renderer.entity.LivingEntityRenderer;
 
-public class ShadowCloneRenderer extends MobRenderer<ShadowCloneEntity, SubstitutionLogModel<ShadowCloneEntity>> {
-    public static final ResourceLocation SHADOW_CLONE = new ResourceLocation("narutomod", "textures/entity/jutsu/substitution_log.png");
+import static com.sekwah.narutomod.entity.NarutoEntities.SHADOW_CLONE;
+
+public class ShadowCloneRenderer extends LivingEntityRenderer<ShadowCloneEntity, ShadowCloneModel<ShadowCloneEntity>>{
+    public static final ResourceLocation DEFAULT_SKIN = new ResourceLocation("minecraft", "textures/entity/steve.png");
 
     public ShadowCloneRenderer(EntityRendererProvider.Context manager) {
-        super(manager, new SubstitutionLogModel(manager.bakeLayer(SubstitutionLogModel.LAYER_LOCATION)), 0.5F);
-        this.shadowRadius = 0.5F;
+        super(manager, new ShadowCloneModel<>(manager.bakeLayer(ShadowCloneModel.LAYER_LOCATION)), 0.5F);
     }
 
     public void render(ShadowCloneEntity p_115976_, float p_115977_, float p_115978_, PoseStack p_115979_, MultiBufferSource p_115980_, int p_115981_) {
@@ -25,7 +27,7 @@ public class ShadowCloneRenderer extends MobRenderer<ShadowCloneEntity, Substitu
 
     @Override
     public ResourceLocation getTextureLocation(ShadowCloneEntity entity) {
-        return SHADOW_CLONE;
+        return entity.getSkinTexture() != null ? entity.getSkinTexture() : DEFAULT_SKIN;
     }
 
 }

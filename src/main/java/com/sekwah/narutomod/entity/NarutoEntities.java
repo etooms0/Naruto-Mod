@@ -45,7 +45,10 @@ public class NarutoEntities {
             EntityType.Builder.<PaperBombEntity>of(PaperBombEntity::new, MobCategory.MISC).fireImmune().sized(0.5F, 0.5F).setTrackingRange(10).clientTrackingRange(10));
 
     public static final RegistryObject<EntityType<ShadowCloneEntity>> SHADOW_CLONE = register("shadow_clone",
-            EntityType.Builder.<ShadowCloneEntity>of(ShadowCloneEntity::new, MobCategory.MISC).fireImmune().sized(0.3F, 0.3F).clientTrackingRange(4));
+            EntityType.Builder.<ShadowCloneEntity>of(ShadowCloneEntity::new, MobCategory.CREATURE)
+                    .fireImmune()
+                    .sized(0.6F, 1.8F) // Taille ajustée
+                    .clientTrackingRange(8)); // Portée de suivi
 
     public static final RegistryObject<EntityType<FireballJutsuEntity>> FIREBALL_JUTSU = register("fireball_jutsu",
             EntityType.Builder.<FireballJutsuEntity>of(FireballJutsuEntity::new, MobCategory.MISC).sized(1.5F, 1.5F).clientTrackingRange(4).updateInterval(10));

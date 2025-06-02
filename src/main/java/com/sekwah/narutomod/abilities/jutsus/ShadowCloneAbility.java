@@ -1,5 +1,7 @@
 package com.sekwah.narutomod.abilities.jutsus;
 
+import com.sekwah.narutomod.entity.NarutoEntities;
+import com.sekwah.narutomod.entity.ShadowCloneEntity;
 import com.sekwah.narutomod.entity.SubstitutionLogEntity;
 
 import com.sekwah.narutomod.abilities.Ability;
@@ -59,9 +61,10 @@ public class ShadowCloneAbility extends Ability implements Ability.Cooldown {
     public void spawnCloneAt(Player player, Vec3 pos, INinjaData ninjaData) {
         ninjaData.setInvisibleTicks(5);
         player.addEffect(new MobEffectInstance(MobEffects.INVISIBILITY, 5, 0, false, false));
-        SubstitutionLogEntity log = new SubstitutionLogEntity(player.level());
-        log.setPos(pos.add(0, 1, 0));
-        player.level().addFreshEntity(log);
+        ShadowCloneEntity clone = new ShadowCloneEntity(NarutoEntities.SHADOW_CLONE.get(), player.level());
+        clone.setPos(pos.add(0, 1, 0));
+        clone.setOwner(player); // ✅ Le clone copie les actions du joueur
+        player.level().addFreshEntity(clone);
         if(player.level() instanceof ServerLevel serverLevel) {
             serverLevel.sendParticles(ParticleTypes.CLOUD,
                     pos.x,
