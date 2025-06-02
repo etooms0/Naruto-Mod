@@ -19,6 +19,7 @@ import net.minecraft.world.level.Level;
 import net.minecraftforge.network.NetworkHooks;
 
 import java.util.Collections;
+import java.util.Objects;
 
 public class ShadowCloneEntity extends LivingEntity {
 
@@ -70,8 +71,21 @@ public class ShadowCloneEntity extends LivingEntity {
 
     public ShadowCloneEntity(EntityType<? extends ShadowCloneEntity> type, Level level) {
         super(type, level);
-        this.gameProfile = new GameProfile(null, "steve"); // Valeur par défaut
+        this.gameProfile = new GameProfile(null, "Steve"); // ✅ Évite l'erreur en initialisant gameProfile
+
+        // Vérification avant d'appliquer les valeurs
+        if (this.getAttribute(Attributes.MAX_HEALTH) != null) {
+            Objects.requireNonNull(this.getAttribute(Attributes.MAX_HEALTH)).setBaseValue(20.0D);
+        }
+        if (this.getAttribute(Attributes.MOVEMENT_SPEED) != null) {
+            Objects.requireNonNull(this.getAttribute(Attributes.MOVEMENT_SPEED)).setBaseValue(0.3D);
+        }
+        if (this.getAttribute(Attributes.ATTACK_DAMAGE) != null) {
+            Objects.requireNonNull(this.getAttribute(Attributes.ATTACK_DAMAGE)).setBaseValue(5.0D);
+        }
     }
+
+
 
     public ShadowCloneEntity(EntityType<? extends ShadowCloneEntity> type, Level level, GameProfile profile) {
         super(type, level);
@@ -84,6 +98,7 @@ public class ShadowCloneEntity extends LivingEntity {
                 .add(Attributes.MOVEMENT_SPEED, 0.3D)
                 .add(Attributes.ATTACK_DAMAGE, 5.0D);
     }
+
 
     @Override
     public boolean hurt(DamageSource source, float amount) {

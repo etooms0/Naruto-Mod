@@ -12,6 +12,7 @@ import com.sekwah.narutomod.config.NarutoConfig;
 import com.sekwah.narutomod.commands.NarutoCommands;
 import com.sekwah.narutomod.entity.NarutoDataSerialisers;
 import com.sekwah.narutomod.entity.NarutoEntities;
+import com.sekwah.narutomod.entity.ShadowCloneEntity;
 import com.sekwah.narutomod.gameevents.NarutoGameEvents;
 import com.sekwah.narutomod.item.NarutoCreativeTabs;
 import com.sekwah.narutomod.item.NarutoDispenseItemBehavior;
@@ -24,6 +25,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.common.capabilities.RegisterCapabilitiesEvent;
 import net.minecraftforge.event.RegisterCommandsEvent;
+import net.minecraftforge.event.entity.EntityAttributeCreationEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.DistExecutor;
@@ -44,7 +46,6 @@ public class NarutoMod {
     // private static final Logger LOGGER = LogUtils.getLogger();
 
     public NarutoMod() {
-
         ModLoadingContext loadingContext = ModLoadingContext.get();
         loadingContext.registerConfig(ModConfig.Type.COMMON, NarutoConfig.MOD_CONFIG, "naruto-mod.toml");
 
@@ -71,6 +72,10 @@ public class NarutoMod {
         DistExecutor.safeCallWhenOn(Dist.CLIENT, () -> NarutoInGameGUI::new);
     }
 
+    @SubscribeEvent
+    public static void onEntityAttributeCreation(EntityAttributeCreationEvent event) {
+        event.put(NarutoEntities.SHADOW_CLONE.get(), ShadowCloneEntity.createAttributes().build()); // ✅ Ajoute les attributs du clone
+    }
 
     private void clientSetup(FMLClientSetupEvent event) {
         //NarutoRenderEvents.registerRenderTypes();
