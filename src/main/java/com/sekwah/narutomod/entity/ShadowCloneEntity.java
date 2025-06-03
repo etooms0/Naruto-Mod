@@ -6,14 +6,12 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.protocol.game.ClientboundAddEntityPacket;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
-import net.minecraft.world.entity.HumanoidArm;
+import net.minecraft.world.entity.*;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.damagesource.DamageSource;
-import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.EquipmentSlot;
-import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
@@ -26,11 +24,33 @@ import net.minecraftforge.registries.ForgeRegistries;
 import java.util.Collections;
 import java.util.Objects;
 
-public class ShadowCloneEntity extends LivingEntity {
+public class ShadowCloneEntity extends TamableAnimal {
 
     private int aliveTicks = 3*20;
     private final GameProfile gameProfile;
     private Player owner;
+
+    public ShadowCloneEntity(EntityType<? extends ShadowCloneEntity> type, Level level) {
+        super(type, level);
+        this.gameProfile = new GameProfile(null, "Steve"); // ✅ Évite l'erreur en initialisant gameProfile
+
+        // Vérification avant d'appliquer les valeurs
+        if (this.getAttribute(Attributes.MAX_HEALTH) != null) {
+            Objects.requireNonNull(this.getAttribute(Attributes.MAX_HEALTH)).setBaseValue(20.0D);
+        }
+        if (this.getAttribute(Attributes.MOVEMENT_SPEED) != null) {
+            Objects.requireNonNull(this.getAttribute(Attributes.MOVEMENT_SPEED)).setBaseValue(0.3D);
+        }
+        if (this.getAttribute(Attributes.ATTACK_DAMAGE) != null) {
+            Objects.requireNonNull(this.getAttribute(Attributes.ATTACK_DAMAGE)).setBaseValue(5.0D);
+        }
+    }
+
+    public ShadowCloneEntity(EntityType<? extends ShadowCloneEntity> type, Level level, GameProfile profile) {
+        super(type, level);
+        this.gameProfile = profile;
+    }
+
 
     public void setOwner(Player player) {
         this.owner = player;
@@ -39,6 +59,11 @@ public class ShadowCloneEntity extends LivingEntity {
     @Override
     public HumanoidArm getMainArm() {
         return this.owner != null ? this.owner.getMainArm() : HumanoidArm.RIGHT;
+    }
+
+    @Override
+    public ShadowCloneEntity getBreedOffspring(ServerLevel level, AgeableMob parent) {
+        return null; // ✅ Empêche la création de progéniture
     }
 
     @Override
@@ -73,34 +98,13 @@ public class ShadowCloneEntity extends LivingEntity {
         return new ResourceLocation("minecraft", "textures/entity/alex.png"); // ✅ Texture de secours
     }
 
-    public ShadowCloneEntity(EntityType<? extends ShadowCloneEntity> type, Level level) {
-        super(type, level);
-        this.gameProfile = new GameProfile(null, "Steve"); // ✅ Évite l'erreur en initialisant gameProfile
-
-        // Vérification avant d'appliquer les valeurs
-        if (this.getAttribute(Attributes.MAX_HEALTH) != null) {
-            Objects.requireNonNull(this.getAttribute(Attributes.MAX_HEALTH)).setBaseValue(20.0D);
-        }
-        if (this.getAttribute(Attributes.MOVEMENT_SPEED) != null) {
-            Objects.requireNonNull(this.getAttribute(Attributes.MOVEMENT_SPEED)).setBaseValue(0.3D);
-        }
-        if (this.getAttribute(Attributes.ATTACK_DAMAGE) != null) {
-            Objects.requireNonNull(this.getAttribute(Attributes.ATTACK_DAMAGE)).setBaseValue(5.0D);
-        }
-    }
-
-
-
-    public ShadowCloneEntity(EntityType<? extends ShadowCloneEntity> type, Level level, GameProfile profile) {
-        super(type, level);
-        this.gameProfile = profile;
-    }
-
     public static AttributeSupplier.Builder createAttributes() {
         return LivingEntity.createLivingAttributes()
                 .add(Attributes.MAX_HEALTH, 20.0D)
                 .add(Attributes.MOVEMENT_SPEED, 0.3D)
-                .add(Attributes.ATTACK_DAMAGE, 5.0D);
+                .add(Attributes.ATTACK_DAMAGE, 5.0D)
+                .add(Attributes.FOLLOW_RANGE, 16.0D); // ✅ Permet au clone de voir les ennemis et les attaquer
+
     }
 
     @Override
