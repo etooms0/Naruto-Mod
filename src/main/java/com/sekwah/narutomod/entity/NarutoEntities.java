@@ -70,6 +70,7 @@ public class NarutoEntities {
 
     @SubscribeEvent
     public static void entityAttributeCreation(EntityAttributeCreationEvent event) {
+        event.put(SHADOW_CLONE.get(), ShadowCloneEntity.createAttributes().build());
         event.put(SUBSTITUTION_LOG.get(), SubstitutionLogEntity.createAttributes().build());
     }
 

@@ -23,7 +23,7 @@ import java.util.Objects;
 
 public class ShadowCloneEntity extends LivingEntity {
 
-    private int aliveTicks = 20 * 3;
+    private int aliveTicks = 50000;
     private final GameProfile gameProfile;
     private Player owner;
 
@@ -63,10 +63,9 @@ public class ShadowCloneEntity extends LivingEntity {
 
     public ResourceLocation getSkinTexture() {
         if (this.owner != null) {
-            GameProfile profile = this.owner.getGameProfile();
-            return Minecraft.getInstance().getSkinManager().getInsecureSkinLocation(profile);
+            return Minecraft.getInstance().getSkinManager().getInsecureSkinLocation(owner.getGameProfile());
         }
-        return new ResourceLocation("minecraft", "textures/entity/steve.png"); // Texture par défaut
+        return new ResourceLocation("minecraft", "textures/entity/alex.png"); // ✅ Texture de secours
     }
 
     public ShadowCloneEntity(EntityType<? extends ShadowCloneEntity> type, Level level) {
@@ -99,11 +98,18 @@ public class ShadowCloneEntity extends LivingEntity {
                 .add(Attributes.ATTACK_DAMAGE, 5.0D);
     }
 
-
     @Override
     public boolean hurt(DamageSource source, float amount) {
-        // Le clone disparaît plutôt que de prendre des dégâts
-        this.kill();
+        if (!this.level().isClientSide) {
+            System.out.println("[NarutoMod] 💥 Dégâts reçus par le clone : " + amount);
+
+            if (this.getHealth() - amount <= 0) { // ✅ Vérifie si la vie tombe à 0
+                System.out.println("[NarutoMod] 🔥 Shadow Clone détruit !");
+                this.remove(RemovalReason.KILLED);
+            } else {
+                this.setHealth(this.getHealth() - amount); // ✅ Applique les dégâts normalement
+            }
+        }
         return true;
     }
 
@@ -112,7 +118,7 @@ public class ShadowCloneEntity extends LivingEntity {
         super.tick();
         this.aliveTicks--;
         if (this.aliveTicks <= 0) {
-            this.kill();
+            this.remove(RemovalReason.KILLED);
         }
     }
 
