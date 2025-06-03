@@ -12,6 +12,7 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.*;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.entity.ai.goal.FollowOwnerGoal;
 import net.minecraft.world.entity.ai.goal.MeleeAttackGoal;
 import net.minecraft.world.entity.ai.goal.target.OwnerHurtByTargetGoal;
 import net.minecraft.world.entity.ai.goal.target.OwnerHurtTargetGoal;
@@ -29,7 +30,7 @@ import java.util.Objects;
 
 public class ShadowCloneEntity extends TamableAnimal {
 
-    private int aliveTicks = 3*20;
+    private int aliveTicks = 5*60*20;
     private final GameProfile gameProfile;
     private Player owner;
 
@@ -144,6 +145,7 @@ public class ShadowCloneEntity extends TamableAnimal {
     protected void registerGoals() {
         super.registerGoals();
 
+        this.goalSelector.addGoal(1, new FollowOwnerGoal(this, 1.2D, 5.0F, 1.0F, false)); // ✅ Le clone suit son propriétaire !
         // ✅ Défend son propriétaire en attaquant ceux qui l'agressent
         this.targetSelector.addGoal(1, new OwnerHurtByTargetGoal(this));
 
@@ -154,11 +156,28 @@ public class ShadowCloneEntity extends TamableAnimal {
         this.goalSelector.addGoal(3, new MeleeAttackGoal(this, 1.2D, true)); // ⚔️ Frappe l'ennemi avec une attaque directe
     }
 
+    public boolean shouldSprint() {
+        if (this.getOwner() != null && this.distanceTo(this.getOwner()) > 5.0F) {
+            return true; // ✅ Sprint si trop éloigné du joueur
+        }
+
+        if (this.getTarget() != null && this.distanceTo(this.getTarget()) > 5.0F) {
+            return true; // ✅ Sprint si trop éloigné de sa cible
+        }
+
+        return false; // 🚶 Sinon, il marche normalement
+    }
 
     @Override
     public void tick() {
         super.tick();
         this.aliveTicks--;
+
+        if (this.shouldSprint()) {
+            this.setSprinting(true); // 🚀 Sprint activé
+        } else {
+            this.setSprinting(false); // 🚶 Arrête de sprinter
+        }
 
         if (this.aliveTicks <= 0) {
             if (!this.level().isClientSide) { // ✅ Assure que le son joue uniquement côté serveur
