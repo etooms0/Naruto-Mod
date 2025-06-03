@@ -58,7 +58,18 @@
     ],
     "subtitle": "narutomod.subtitle.fireball.explosion"
   },
-  "waterbullet.shoot": {
+  "jutsusounds.clone_poof": {
+    "category": "player",
+    "sounds": [
+      {
+        "name": "narutomod:jutsu/clone_poof",
+        "stream": false
+      }
+    ]
+  },
+
+
+"waterbullet.shoot": {
     "sounds": [
       "liquid/swim5",
       "liquid/swim6",

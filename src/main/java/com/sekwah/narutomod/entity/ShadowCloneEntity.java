@@ -1,10 +1,13 @@
 package com.sekwah.narutomod.entity;
 
 import com.mojang.authlib.GameProfile;
+import com.sekwah.narutomod.sounds.NarutoSounds;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.protocol.game.ClientboundAddEntityPacket;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.damagesource.DamageSource;
@@ -16,14 +19,16 @@ import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
+import net.minecraftforge.client.event.sound.SoundEvent;
 import net.minecraftforge.network.NetworkHooks;
+import net.minecraftforge.registries.ForgeRegistries;
 
 import java.util.Collections;
 import java.util.Objects;
 
 public class ShadowCloneEntity extends LivingEntity {
 
-    private int aliveTicks = 50000;
+    private int aliveTicks = 3*20;
     private final GameProfile gameProfile;
     private Player owner;
 
@@ -101,13 +106,14 @@ public class ShadowCloneEntity extends LivingEntity {
     @Override
     public boolean hurt(DamageSource source, float amount) {
         if (!this.level().isClientSide) {
-            System.out.println("[NarutoMod] 💥 Dégâts reçus par le clone : " + amount);
+            if (this.getHealth() - amount <= 0) {
+                this.level().playSound(null, this.getX(), this.getY(), this.getZ(),
+                        NarutoSounds.CLONE_POOF.get(),
+                        SoundSource.PLAYERS, 0.3F, 1.0F);
 
-            if (this.getHealth() - amount <= 0) { // ✅ Vérifie si la vie tombe à 0
-                System.out.println("[NarutoMod] 🔥 Shadow Clone détruit !");
                 this.remove(RemovalReason.KILLED);
             } else {
-                this.setHealth(this.getHealth() - amount); // ✅ Applique les dégâts normalement
+                this.setHealth(this.getHealth() - amount);
             }
         }
         return true;
@@ -117,8 +123,16 @@ public class ShadowCloneEntity extends LivingEntity {
     public void tick() {
         super.tick();
         this.aliveTicks--;
+
         if (this.aliveTicks <= 0) {
-            this.remove(RemovalReason.KILLED);
+            if (!this.level().isClientSide) { // ✅ Assure que le son joue uniquement côté serveur
+                this.level().playSound(null, this.getX(), this.getY(), this.getZ(),
+                        NarutoSounds.CLONE_POOF.get(), // ✅ Joue le son enregistré
+                        SoundSource.PLAYERS, 0.3F, 1.0F);
+
+            }
+
+            this.remove(RemovalReason.KILLED); // ✅ Supprime le clone proprement
         }
     }
 
