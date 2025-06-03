@@ -39,7 +39,7 @@ public class ShadowCloneEntity extends TamableAnimal {
 
         // Vérification avant d'appliquer les valeurs
         if (this.getAttribute(Attributes.MAX_HEALTH) != null) {
-            Objects.requireNonNull(this.getAttribute(Attributes.MAX_HEALTH)).setBaseValue(20.0D);
+            Objects.requireNonNull(this.getAttribute(Attributes.MAX_HEALTH)).setBaseValue(2.0D);
         }
         if (this.getAttribute(Attributes.MOVEMENT_SPEED) != null) {
             Objects.requireNonNull(this.getAttribute(Attributes.MOVEMENT_SPEED)).setBaseValue(0.3D);
@@ -55,9 +55,23 @@ public class ShadowCloneEntity extends TamableAnimal {
     }
 
 
+
+    @Override
+    public boolean doHurtTarget(Entity target) {
+        if (target instanceof LivingEntity victim) {
+            float damage = (float) this.getAttributeValue(Attributes.ATTACK_DAMAGE); // ✅ Récupère la force du clone
+            return victim.hurt(this.damageSources().mobAttack(this), damage); // ✅ Inflige des dégâts sans erreur
+        }
+        return false;
+    }
+
     public void setOwner(Player player) {
         this.owner = player;
+        this.setCustomName(player.getName());
+        this.setCustomNameVisible(true);
     }
+
+
 
     @Override
     public HumanoidArm getMainArm() {
@@ -103,7 +117,7 @@ public class ShadowCloneEntity extends TamableAnimal {
 
     public static AttributeSupplier.Builder createAttributes() {
         return LivingEntity.createLivingAttributes()
-                .add(Attributes.MAX_HEALTH, 20.0D)
+                .add(Attributes.MAX_HEALTH, 2.0D)
                 .add(Attributes.MOVEMENT_SPEED, 0.3D)
                 .add(Attributes.ATTACK_DAMAGE, 5.0D)
                 .add(Attributes.FOLLOW_RANGE, 16.0D); // ✅ Permet au clone de voir les ennemis et les attaquer
