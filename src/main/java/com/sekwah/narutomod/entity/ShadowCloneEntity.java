@@ -12,6 +12,9 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.*;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.entity.ai.goal.MeleeAttackGoal;
+import net.minecraft.world.entity.ai.goal.target.OwnerHurtByTargetGoal;
+import net.minecraft.world.entity.ai.goal.target.OwnerHurtTargetGoal;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
@@ -124,6 +127,21 @@ public class ShadowCloneEntity extends TamableAnimal {
     }
 
     @Override
+    protected void registerGoals() {
+        super.registerGoals();
+
+        // ✅ Défend son propriétaire en attaquant ceux qui l'agressent
+        this.targetSelector.addGoal(1, new OwnerHurtByTargetGoal(this));
+
+        // ✅ Attaque automatiquement les cibles du propriétaire
+        this.targetSelector.addGoal(2, new OwnerHurtTargetGoal(this));
+
+        // ✅ Le clone attaque activement sa cible au corps à corps
+        this.goalSelector.addGoal(3, new MeleeAttackGoal(this, 1.2D, true)); // ⚔️ Frappe l'ennemi avec une attaque directe
+    }
+
+
+    @Override
     public void tick() {
         super.tick();
         this.aliveTicks--;
@@ -137,6 +155,13 @@ public class ShadowCloneEntity extends TamableAnimal {
             }
 
             this.remove(RemovalReason.KILLED); // ✅ Supprime le clone proprement
+        }
+    }
+
+    public void updateTarget(LivingEntity newTarget) {
+        if (newTarget != null && newTarget.isAlive()) {
+            this.setTarget(newTarget); // ✅ Change la cible actuelle du clone
+            this.setAggressive(true);  // ✅ Assure qu'il passe bien en mode combat
         }
     }
 
