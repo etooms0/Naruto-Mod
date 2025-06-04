@@ -163,6 +163,13 @@ public class ShadowCloneEntity extends TamableAnimal {
         super.tick();
         this.aliveTicks--;
 
+        // ✅ Vérifie si la cible est un clone, et l'efface si nécessaire
+        if (this.getTarget() instanceof ShadowCloneEntity) {
+            this.setTarget(null);
+            this.setAggressive(false);
+        }
+
+
         this.setSprinting(this.shouldSprint());
         if (this.aliveTicks <= 0) {
             if (!this.level().isClientSide) { // ✅ Assure que le son joue uniquement côté serveur
