@@ -5,6 +5,7 @@ import com.sekwah.narutomod.client.model.entity.ShadowCloneModel;
 import com.sekwah.narutomod.client.model.entity.SubstitutionLogModel;
 import com.sekwah.narutomod.entity.ShadowCloneEntity;
 import com.sekwah.narutomod.entity.SubstitutionLogEntity;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.resources.ResourceLocation;
@@ -14,7 +15,6 @@ import net.minecraft.client.renderer.entity.LivingEntityRenderer;
 import static com.sekwah.narutomod.entity.NarutoEntities.SHADOW_CLONE;
 
 public class ShadowCloneRenderer extends LivingEntityRenderer<ShadowCloneEntity, ShadowCloneModel<ShadowCloneEntity>>{
-    public static final ResourceLocation DEFAULT_SKIN = new ResourceLocation("minecraft", "textures/entity/steve.png");
 
     public ShadowCloneRenderer(EntityRendererProvider.Context manager) {
         super(manager, new ShadowCloneModel<>(manager.bakeLayer(ShadowCloneModel.LAYER_LOCATION)), 0.5F);
@@ -27,7 +27,10 @@ public class ShadowCloneRenderer extends LivingEntityRenderer<ShadowCloneEntity,
 
     @Override
     public ResourceLocation getTextureLocation(ShadowCloneEntity entity) {
-        return entity.getSkinTexture() != null ? entity.getSkinTexture() : DEFAULT_SKIN;
+        if (entity.getOwner() != null) {
+            return Minecraft.getInstance().getSkinManager().getInsecureSkinLocation(entity.getOwner().getGameProfile());
+        }
+        return new ResourceLocation("minecraft", "textures/entity/player/slim/steve.png"); // ✅ Chemin mis à jour !
     }
 
 }

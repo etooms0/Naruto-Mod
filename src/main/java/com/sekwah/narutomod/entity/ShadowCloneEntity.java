@@ -21,6 +21,7 @@ import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.client.event.sound.SoundEvent;
 import net.minecraftforge.network.NetworkHooks;
 import net.minecraftforge.registries.ForgeRegistries;
@@ -40,7 +41,7 @@ public class ShadowCloneEntity extends TamableAnimal {
 
         // Vérification avant d'appliquer les valeurs
         if (this.getAttribute(Attributes.MAX_HEALTH) != null) {
-            Objects.requireNonNull(this.getAttribute(Attributes.MAX_HEALTH)).setBaseValue(2.0D);
+            Objects.requireNonNull(this.getAttribute(Attributes.MAX_HEALTH)).setBaseValue(20.0D);
         }
         if (this.getAttribute(Attributes.MOVEMENT_SPEED) != null) {
             Objects.requireNonNull(this.getAttribute(Attributes.MOVEMENT_SPEED)).setBaseValue(0.3D);
@@ -109,21 +110,36 @@ public class ShadowCloneEntity extends TamableAnimal {
         return this.gameProfile;
     }
 
-    public ResourceLocation getSkinTexture() {
-        if (this.owner != null) {
-            return Minecraft.getInstance().getSkinManager().getInsecureSkinLocation(owner.getGameProfile());
-        }
-        return new ResourceLocation("minecraft", "textures/entity/alex.png"); // ✅ Texture de secours
-    }
-
     public static AttributeSupplier.Builder createAttributes() {
         return LivingEntity.createLivingAttributes()
-                .add(Attributes.MAX_HEALTH, 2.0D)
+                .add(Attributes.MAX_HEALTH, 20.0D)
                 .add(Attributes.MOVEMENT_SPEED, 0.3D)
                 .add(Attributes.ATTACK_DAMAGE, 5.0D)
                 .add(Attributes.FOLLOW_RANGE, 16.0D); // ✅ Permet au clone de voir les ennemis et les attaquer
 
     }
+
+
+
+    @Override
+    protected void registerGoals() {
+        super.registerGoals();
+
+        this.goalSelector.addGoal(4, new FollowOwnerGoal(this, 1.2D, 5.0F, 1.0F, false)); // ✅ Le clone suit son propriétaire !
+        // ✅ Défend son propriétaire en attaquant ceux qui l'agressent
+        this.targetSelector.addGoal(1, new OwnerHurtByTargetGoal(this));
+
+        // ✅ Attaque automatiquement les cibles du propriétaire
+        this.targetSelector.addGoal(2, new OwnerHurtTargetGoal(this));
+
+        // ✅ Le clone attaque activement sa cible au corps à corps
+        this.goalSelector.addGoal(3, new MeleeAttackGoal(this, 1.2D, true)); // ⚔️ Frappe l'ennemi avec une attaque directe
+    }
+
+    public boolean shouldSprint() {
+        return this.getDeltaMovement().lengthSqr() > 0.01D; // ✅ Sprint si déplacement normal
+    }
+
 
     @Override
     public boolean hurt(DamageSource source, float amount) {
@@ -141,44 +157,13 @@ public class ShadowCloneEntity extends TamableAnimal {
         return true;
     }
 
-    @Override
-    protected void registerGoals() {
-        super.registerGoals();
-
-        this.goalSelector.addGoal(1, new FollowOwnerGoal(this, 1.2D, 5.0F, 1.0F, false)); // ✅ Le clone suit son propriétaire !
-        // ✅ Défend son propriétaire en attaquant ceux qui l'agressent
-        this.targetSelector.addGoal(1, new OwnerHurtByTargetGoal(this));
-
-        // ✅ Attaque automatiquement les cibles du propriétaire
-        this.targetSelector.addGoal(2, new OwnerHurtTargetGoal(this));
-
-        // ✅ Le clone attaque activement sa cible au corps à corps
-        this.goalSelector.addGoal(3, new MeleeAttackGoal(this, 1.2D, true)); // ⚔️ Frappe l'ennemi avec une attaque directe
-    }
-
-    public boolean shouldSprint() {
-        if (this.getOwner() != null && this.distanceTo(this.getOwner()) > 5.0F) {
-            return true; // ✅ Sprint si trop éloigné du joueur
-        }
-
-        if (this.getTarget() != null && this.distanceTo(this.getTarget()) > 5.0F) {
-            return true; // ✅ Sprint si trop éloigné de sa cible
-        }
-
-        return false; // 🚶 Sinon, il marche normalement
-    }
 
     @Override
     public void tick() {
         super.tick();
         this.aliveTicks--;
 
-        if (this.shouldSprint()) {
-            this.setSprinting(true); // 🚀 Sprint activé
-        } else {
-            this.setSprinting(false); // 🚶 Arrête de sprinter
-        }
-
+        this.setSprinting(this.shouldSprint());
         if (this.aliveTicks <= 0) {
             if (!this.level().isClientSide) { // ✅ Assure que le son joue uniquement côté serveur
                 this.level().playSound(null, this.getX(), this.getY(), this.getZ(),
