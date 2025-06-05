@@ -39,16 +39,6 @@ public class ShadowCloneEntity extends TamableAnimal {
         super(type, level);
         this.gameProfile = new GameProfile(null, "Steve"); // ✅ Évite l'erreur en initialisant gameProfile
 
-        // Vérification avant d'appliquer les valeurs
-        if (this.getAttribute(Attributes.MAX_HEALTH) != null) {
-            Objects.requireNonNull(this.getAttribute(Attributes.MAX_HEALTH)).setBaseValue(20.0D);
-        }
-        if (this.getAttribute(Attributes.MOVEMENT_SPEED) != null) {
-            Objects.requireNonNull(this.getAttribute(Attributes.MOVEMENT_SPEED)).setBaseValue(0.3D);
-        }
-        if (this.getAttribute(Attributes.ATTACK_DAMAGE) != null) {
-            Objects.requireNonNull(this.getAttribute(Attributes.ATTACK_DAMAGE)).setBaseValue(5.0D);
-        }
     }
 
     public ShadowCloneEntity(EntityType<? extends ShadowCloneEntity> type, Level level, GameProfile profile) {
@@ -112,7 +102,7 @@ public class ShadowCloneEntity extends TamableAnimal {
 
     public static AttributeSupplier.Builder createAttributes() {
         return LivingEntity.createLivingAttributes()
-                .add(Attributes.MAX_HEALTH, 20.0D)
+                .add(Attributes.MAX_HEALTH, 2.0D)
                 .add(Attributes.MOVEMENT_SPEED, 0.3D)
                 .add(Attributes.ATTACK_DAMAGE, 5.0D)
                 .add(Attributes.FOLLOW_RANGE, 16.0D); // ✅ Permet au clone de voir les ennemis et les attaquer
