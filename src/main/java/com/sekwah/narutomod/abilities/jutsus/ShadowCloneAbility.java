@@ -61,19 +61,15 @@ public class ShadowCloneAbility extends Ability implements Ability.Cooldown {
     public void spawnCloneAt(Player player, Vec3 pos, INinjaData ninjaData) {
         ninjaData.setInvisibleTicks(5);
         player.addEffect(new MobEffectInstance(MobEffects.INVISIBILITY, 5, 0, false, false));
-        ShadowCloneEntity clone = NarutoEntities.SHADOW_CLONE.get().create(player.level());
+
+        // ✅ Passe directement le GameProfile du joueur au constructeur du clone
+        ShadowCloneEntity clone = new ShadowCloneEntity(NarutoEntities.SHADOW_CLONE.get(), player.level(), player.getGameProfile());
         clone.setPos(pos.add(0, 1, 0));
-        clone.setOwner(player); // ✅ Le clone copie les actions du joueur
+        clone.setOwner(player);
+
         player.level().addFreshEntity(clone);
-        if(player.level() instanceof ServerLevel serverLevel) {
-            serverLevel.sendParticles(ParticleTypes.CLOUD,
-                    pos.x,
-                    pos.y + (player.getBbHeight() / 2),
-                    pos.z,
-                    100,
-                    0.5, 0.7, 0.5, 0);
-        }
     }
+
 
 
 
