@@ -33,6 +33,10 @@ public class ShadowCloneModel<T extends LivingEntity> extends HumanoidModel<T> {
         if (entity instanceof ShadowCloneEntity clone && clone.isSprinting()) {
             CloneAnimHandler.applySprintingAnim(clone, this); // ✅ Anime le modèle des clones !
         }
+        if (entity instanceof ShadowCloneEntity clone && !clone.isSprinting()) {
+            CloneAnimHandler.resetAnim(clone, this); // ✅ Anime le modèle des clones !
+        }
+
     }
 
 }

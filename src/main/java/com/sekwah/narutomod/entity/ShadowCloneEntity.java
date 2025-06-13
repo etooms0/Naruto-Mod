@@ -127,7 +127,7 @@ public class ShadowCloneEntity extends TamableAnimal {
     }
 
     public boolean shouldSprint() {
-        return this.getDeltaMovement().lengthSqr() > 0.01D; // ✅ Sprint si déplacement normal
+        return this.getDeltaMovement().lengthSqr() > 0.02D; // ✅ Sprint si déplacement normal
     }
 
 

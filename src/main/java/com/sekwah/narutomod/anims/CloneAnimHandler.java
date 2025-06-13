@@ -7,7 +7,6 @@ import net.minecraft.client.model.HumanoidModel;
 public class CloneAnimHandler {
 
     public static <T extends HumanoidModel<?>> void applySprintingAnim(ShadowCloneEntity clone, T model) {
-        if (clone.isSprinting()) {
             // Animation sprint Naruto
             model.rightArm.setRotation(1.412787F, 0F, 0F);
             model.rightArm.setPos(-5F, 3.933333F, -5F);
@@ -22,7 +21,9 @@ public class CloneAnimHandler {
             model.body.setRotation(0.5435722F, 0F, 0F);
             // ...et le torse est déplacé en avant
             model.body.setPos(0F, 3F - 1F, -5.5F);
-        } else {
+    }
+
+    public static <T extends HumanoidModel<?>> void resetAnim(ShadowCloneEntity clone, T model){
             // Réinitialisation complète lorsque le clone n'est plus en sprint
             // Ces valeurs correspondent aux positions/rotations par défaut.
             model.rightArm.setRotation(0F, 0F, 0F);
@@ -36,7 +37,6 @@ public class CloneAnimHandler {
 
             model.body.setRotation(0F, 0F, 0F);
             model.body.setPos(0F, 0F, 0F);
-        }
     }
 
 }
