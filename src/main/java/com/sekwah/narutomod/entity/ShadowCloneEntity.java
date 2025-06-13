@@ -142,6 +142,12 @@ public class ShadowCloneEntity extends TamableAnimal {
                 this.remove(RemovalReason.KILLED);
             } else {
                 this.setHealth(this.getHealth() - amount);
+                Entity attacker = source.getEntity();
+                if(attacker != null){
+                    Vec3 direction = this.position().subtract(attacker.position()).normalize();
+                    this.push(direction.x * 0.5, 0.4, direction.z * 0.5);
+                    this.hasImpulse = true;
+                }
             }
         }
         return true;
