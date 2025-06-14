@@ -50,14 +50,15 @@ public class BarrierJutsuAbility extends Ability implements Ability.Cooldown {
 
     private void createBarrier(ServerPlayer player) {
         Level level = player.level();
-        BlockPos center = player.blockPosition();
+        BlockPos center = player.blockPosition().below(); // 🔥 Abaisse la cage sous le joueur
         int radiusX = 7, radiusZ = 7, height = 10;
 
         for (int x = -radiusX; x <= radiusX; x++) {
             for (int y = 0; y <= height; y++) {
                 for (int z = -radiusZ; z <= radiusZ; z++) {
                     BlockPos pos = center.offset(x, y, z);
-                    if (y == 0) {
+
+                    if (y == 0) { // ✅ Sol en bois sous le joueur, pas à son niveau
                         level.setBlock(pos, Blocks.OAK_PLANKS.defaultBlockState(), 3);
                     } else if (shouldPlaceBars(center, pos, radiusX, radiusZ)) {
                         level.setBlock(pos, Blocks.IRON_BARS.defaultBlockState(), 3);
@@ -90,8 +91,9 @@ public class BarrierJutsuAbility extends Ability implements Ability.Cooldown {
 
     private static void removeBarrier(Level level, BlockPos center) {
         int radiusX = 7, radiusZ = 7, height = 10;
+
         for (int x = -radiusX; x <= radiusX; x++) {
-            for (int y = 0; y <= height; y++) {
+            for (int y = -1; y <= height; y++) { // 🔥 Ajoute `-1` pour inclure le sol
                 for (int z = -radiusZ; z <= radiusZ; z++) {
                     BlockPos pos = center.offset(x, y, z);
                     level.removeBlock(pos, false);
