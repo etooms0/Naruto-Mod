@@ -47,6 +47,10 @@ public class NarutoAbilities {
 
     public static final RegistryObject<RinneganSwapAbility> RINNEGAN_SWAP = ABILITY.register("rinnegan_swap", RinneganSwapAbility::new);
 
+    public static final RegistryObject<EarthSphereJutsuAbility> EARTH_SPHERE = ABILITY.register("earth_sphere", EarthSphereJutsuAbility::new);
+
+    public static final RegistryObject<FreezeCubeJutsuAbility> FREEZE = ABILITY.register("freeze_cube", FreezeCubeJutsuAbility::new);
+
     public static final RegistryObject<BarrierJutsuAbility> BARRIER = ABILITY.register("barrier", BarrierJutsuAbility::new);
 
     public static final RegistryObject<WaterBulletJutsuAbility> WATER_BULLET = ABILITY.register("water_bullet", WaterBulletJutsuAbility::new);
