@@ -6,16 +6,22 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.item.FallingBlockEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Explosion;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -24,42 +30,44 @@ import java.util.List;
 public class EarthSphereLiftJutsuAbility extends Ability implements Ability.Cooldown {
 
     /**
-     * Données associées à une sphère en mouvement.
+     * Stocke les données de l’attraction :
+     * - attractorPoint : le point d’attraction (80 blocs au-dessus de la cible)
+     * - targetPos : la position initiale de la cible
+     * - startTick : le tick auquel débute l’effet
+     * - explosionDelayTicks : délai total avant explosion (240 ticks ici)
+     * - fallingBlocks : liste des falling blocks créés initialement
+     * - sphereFormed : indique si la sphère solide est terminée
+     * - currentLayer : le nombre de couches actuellement construites (de 0 à maxRadius)
      */
-    public static class RisingSphereData {
+    public static class AttractorData {
         public final Level level;
-        public final BlockPos originalCenter;
-        public final int radius;
-        public int currentOffset; // décalage vertical actuel
-        public int tickCounter;   // pour contrôler la vitesse de montée
-        public final int targetOffset; // hauteur cible en blocs
+        public final Vec3 attractorPoint;
+        public final BlockPos targetPos;
+        public final long startTick;
+        public final long explosionDelayTicks;
+        public final List<Entity> fallingBlocks = new ArrayList<>();
+        public boolean sphereFormed = false;
+        public int currentLayer = 0;
 
-        public RisingSphereData(Level level, BlockPos center, int radius, int targetOffset) {
+        public AttractorData(Level level, Vec3 attractorPoint, BlockPos targetPos, long startTick, long explosionDelayTicks) {
             this.level = level;
-            this.originalCenter = center;
-            this.radius = radius;
-            this.currentOffset = 0;
-            this.tickCounter = 0;
-            this.targetOffset = targetOffset;
-        }
-
-        // Centre actuel de la sphère (origine + décalage vertical)
-        public BlockPos getCurrentCenter() {
-            return originalCenter.offset(0, currentOffset, 0);
+            this.attractorPoint = attractorPoint;
+            this.targetPos = targetPos;
+            this.startTick = startTick;
+            this.explosionDelayTicks = explosionDelayTicks;
         }
     }
 
-    // Liste de toutes les sphères qui montent actuellement
-    private static final List<RisingSphereData> activeRisingSpheres = new ArrayList<>();
+    private static final List<AttractorData> activeAttractors = new ArrayList<>();
 
     @Override
     public long defaultCombo() {
-        return 112233;  // Exemple de combinaison pour ce jutsu
+        return 112233; // Exemple de combinaison
     }
 
     @Override
     public int getCooldown() {
-        return 15 * 20;  // Par exemple, 15 secondes de cooldown
+        return 30 * 20; // 30 secondes de cooldown
     }
 
     @Override
@@ -68,13 +76,12 @@ public class EarthSphereLiftJutsuAbility extends Ability implements Ability.Cool
     }
 
     /**
-     * Recherche l'entité que le joueur (ServerPlayer) regarde, jusqu'à une distance donnée.
+     * Recherche l'entité que le joueur regarde, jusqu'à une distance maximale.
      */
     private Entity getLookedAtEntity(ServerPlayer player, double maxDistance) {
         Vec3 eyePos = player.getEyePosition(1.0F);
         Vec3 lookVec = player.getLookAngle().scale(maxDistance);
         Vec3 targetPos = eyePos.add(lookVec);
-
         for (Entity entity : player.level().getEntities(player, player.getBoundingBox().expandTowards(lookVec).inflate(1.0))) {
             if (entity.getBoundingBox().intersects(eyePos, targetPos)) {
                 return entity;
@@ -88,146 +95,190 @@ public class EarthSphereLiftJutsuAbility extends Ability implements Ability.Cool
         if (!(player instanceof ServerPlayer serverPlayer))
             return;
 
-        // Détection de l'entité regardée
+        // Recherche de la cible regardée par le joueur (jusqu'à 50 blocs)
         Entity target = getLookedAtEntity(serverPlayer, 50.0);
         if (target == null) {
-            player.displayClientMessage(
-                    Component.literal("Aucune entit\u00E9 d\u00E9tect\u00E9e dans le champ de vision").withStyle(ChatFormatting.RED),
-                    true);
+            player.displayClientMessage(Component.literal("Aucune entité détectée")
+                    .withStyle(ChatFormatting.RED), true);
             return;
         }
         if (target == player) {
-            player.displayClientMessage(
-                    Component.literal("Impossible de cibler soi-m\u00EAme").withStyle(ChatFormatting.RED),
-                    true);
+            player.displayClientMessage(Component.literal("Impossible de se cibler soi-même")
+                    .withStyle(ChatFormatting.RED), true);
             return;
         }
 
         Level level = serverPlayer.level();
-        int radius = 5;  // La sphère aura un diamètre d'environ 11 blocs.
-        // Crée la sphère creuse autour de la cible
-        createHollowEarthSphere(level, target, radius);
+        Vec3 targetPosVec = target.position();
 
-        // Stocke la sphère pour le déplacement : ici, on veut qu'elle monte de 50 blocs
-        BlockPos center = target.blockPosition();
-        activeRisingSpheres.add(new RisingSphereData(level, center, radius, 50));
-    }
+        // Définir le point attracteur : 80 blocs au-dessus de la cible
+        Vec3 attractor = targetPosVec.add(0, 80, 0);
 
-    /**
-     * Crée une sphère creuse (coquille) autour de la cible.
-     * Seuls les voxels dont la distance est comprise entre (radius - 1) et radius sont remplacés par de la terre.
-     */
-    private void createHollowEarthSphere(Level level, Entity target, int radius) {
-        BlockPos center = target.blockPosition();
-        for (int x = -radius; x <= radius; x++) {
-            for (int y = -radius; y <= radius; y++) {
-                for (int z = -radius; z <= radius; z++) {
-                    double distance = Math.sqrt(x * x + y * y + z * z);
-                    if (distance <= radius && distance > (radius - 1)) {
-                        BlockPos pos = center.offset(x, y, z);
-                        if (level.isEmptyBlock(pos)) { // on peut choisir de ne remplacer que l'air
-                            level.setBlock(pos, Blocks.DIRT.defaultBlockState(), 3);
+        // Attirer immédiatement les entités dans un rayon de 10 blocs autour de la cible
+        AABB entityAABB = new AABB(
+                targetPosVec.x - 10, targetPosVec.y - 10, targetPosVec.z - 10,
+                targetPosVec.x + 10, targetPosVec.y + 10, targetPosVec.z + 10
+        );
+        for (Entity e : level.getEntities(null, entityAABB)) {
+            if (e != target) {
+                Vec3 delta = attractor.subtract(e.position());
+                if (delta.length() > 0) {
+                    // Déplacement plus lent
+                    Vec3 velocity = delta.normalize().scale(0.2);
+                    e.setDeltaMovement(velocity);
+                }
+            }
+        }
+
+        // Pour les blocs du sol, on scanne une zone restreinte autour de la cible (rayon horizontal 7, vertical 7 ≈ ±3)
+        int horizRadius = 7;
+        int verticalRange = 7;
+        BlockPos targetPos = target.blockPosition();
+
+        // Création des données d'attraction avec un délai total avant explosion de 240 ticks
+        AttractorData data = new AttractorData(level, attractor, targetPos, level.getGameTime(), 20*20);
+
+        // Limiter le spawn : environ 10 % des blocs candidats sont traités
+        RandomSource random = level.getRandom();
+        float spawnChance = 0.1f;
+
+        // Récupérer le champ privé "blockState" de FallingBlockEntity via réflexion
+        Field blockStateField = null;
+        try {
+            blockStateField = FallingBlockEntity.class.getDeclaredField("blockState");
+            blockStateField.setAccessible(true);
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+
+        // Parcourir la zone pour transformer quelques blocs en FallingBlockEntity
+        for (int x = -horizRadius; x <= horizRadius; x++) {
+            for (int z = -horizRadius; z <= horizRadius; z++) {
+                for (int y = -verticalRange / 2; y <= verticalRange / 2; y++) {
+                    BlockPos pos = targetPos.offset(x, y, z);
+                    BlockState state = level.getBlockState(pos);
+                    if (!state.isAir() && state.getBlock() != Blocks.BEDROCK) {
+                        if (random.nextFloat() > spawnChance)
+                            continue;
+                        // Retirer le bloc du monde
+                        level.setBlock(pos, Blocks.AIR.defaultBlockState(), 3);
+                        // Créer le FallingBlockEntity
+                        FallingBlockEntity fallingBlock = new FallingBlockEntity(EntityType.FALLING_BLOCK, level);
+                        fallingBlock.setPos(pos.getX() + 0.5, pos.getY(), pos.getZ() + 0.5);
+                        if (blockStateField != null) {
+                            try {
+                                blockStateField.set(fallingBlock, state);
+                            } catch (Exception ex) {
+                                ex.printStackTrace();
+                            }
                         }
+                        fallingBlock.setNoGravity(true);
+                        // Calculer la direction linéaire vers le point attracteur (vitesse réduite)
+                        Vec3 blockCenter = new Vec3(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5);
+                        Vec3 motion = attractor.subtract(blockCenter).normalize().scale(0.2);
+                        fallingBlock.setDeltaMovement(motion);
+                        level.addFreshEntity(fallingBlock);
+                        data.fallingBlocks.add(fallingBlock);
                     }
                 }
             }
         }
+
+        activeAttractors.add(data);
     }
 
-    /**
-     * Supprime l'intégralité de la coquille (les blocs de terre) à la position donnée.
-     */
-    private static void removeEntireSphere(Level level, BlockPos center, int radius, int currentOffset) {
-        for (int x = -radius; x <= radius; x++) {
-            for (int y = -radius; y <= radius; y++) {
-                for (int z = -radius; z <= radius; z++) {
-                    double distance = Math.sqrt(x * x + y * y + z * z);
-                    if (distance <= radius && distance > (radius - 1)) {
-                        BlockPos pos = center.offset(x, y + currentOffset, z);
-                        if (level.getBlockState(pos).getBlock() == Blocks.DIRT) {
-                            level.setBlock(pos, Blocks.AIR.defaultBlockState(), 3);
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    /**
-     * Place l'intégralité de la coquille (les blocs de terre) à la position donnée (centre décalé).
-     */
-    private static void placeEntireSphere(Level level, BlockPos center, int radius, int currentOffset) {
-        for (int x = -radius; x <= radius; x++) {
-            for (int y = -radius; y <= radius; y++) {
-                for (int z = -radius; z <= radius; z++) {
-                    double distance = Math.sqrt(x * x + y * y + z * z);
-                    if (distance <= radius && distance > (radius - 1)) {
-                        BlockPos pos = center.offset(x, y + currentOffset, z);
-                        level.setBlock(pos, Blocks.DIRT.defaultBlockState(), 3);
-                    }
-                }
-            }
-        }
-    }
-
-    /**
-     * Cet événement se déclenche chaque tick serveur.
-     * La sphère active monte progressivement :
-     * - On retire la version à l'offset précédent, on incrémente l'offset et on replace l'intégralité de la coquille à la nouvelle altitude.
-     * - On téléporte ensuite toutes les entités dans la zone vers le haut pour qu'elles montent avec la structure.
-     * - Lorsque l'offset atteint la hauteur cible (50 blocs), on déclenche une explosion et on efface la structure.
-     */
     @SubscribeEvent
     public static void onServerTick(TickEvent.ServerTickEvent event) {
-        if (event.phase != TickEvent.Phase.END) return;
-
-        Iterator<RisingSphereData> it = activeRisingSpheres.iterator();
+        if (event.phase != TickEvent.Phase.END)
+            return;
+        Iterator<AttractorData> it = activeAttractors.iterator();
         while (it.hasNext()) {
-            RisingSphereData sphere = it.next();
-            sphere.tickCounter++;
-            // Pour une montée plus rapide, ici on déplace la sphère d'un bloc chaque tick.
-            if (sphere.tickCounter >= 1) {
-                sphere.tickCounter = 0;
-                Level level = sphere.level;
-                // Supprimer l'ancienne position de la sphère
-                removeEntireSphere(level, sphere.originalCenter, sphere.radius, sphere.currentOffset);
-                // Incrémentez l'offset (vous pouvez augmenter cette valeur pour accélérer davantage)
-                sphere.currentOffset += 1;
-                // Placez toute la sphère à la nouvelle position
-                placeEntireSphere(level, sphere.originalCenter, sphere.radius, sphere.currentOffset);
+            AttractorData data = it.next();
+            Level level = data.level;
+            long currentTick = level.getGameTime();
+            long elapsed = currentTick - data.startTick;
 
-                // Téléportation des entités situées dans la zone de la sphère pour qu'elles montent avec elle
-                BlockPos currentCenter = sphere.getCurrentCenter();
-                level.getEntities(null, new net.minecraft.world.phys.AABB(
-                        currentCenter.getX() - sphere.radius, currentCenter.getY() - sphere.radius,
-                        currentCenter.getZ() - sphere.radius,
-                        currentCenter.getX() + sphere.radius, currentCenter.getY() + sphere.radius,
-                        currentCenter.getZ() + sphere.radius)).forEach(entity -> {
-                    entity.teleportTo(entity.getX(), entity.getY() + 1, entity.getZ());
-                });
-
-                // Si l'offset atteint la hauteur cible (50 blocs)
-                if (sphere.currentOffset >= sphere.targetOffset) {
-                    Vec3 explosionPos = new Vec3(
-                            currentCenter.getX() + 0.5,
-                            currentCenter.getY() + 0.5,
-                            currentCenter.getZ() + 0.5);
-                    // Déclenche l'explosion destructive.
-                    level.explode(null, explosionPos.x, explosionPos.y, explosionPos.z, 4.0F, Level.ExplosionInteraction.TNT);
-
-                    // Efface toutes les couches de la structure
-                    for (int i = 0; i < sphere.currentOffset; i++) {
-                        removeEntireSphere(level, sphere.originalCenter, sphere.radius, i);
+            // Phase de formation : pendant cette phase, on continue d'attirer les falling blocks et entités
+            if (!data.sphereFormed) {
+                // Mettre à jour le déplacement des falling blocks vers le point attracteur
+                for (Entity blockEnt : data.fallingBlocks) {
+                    if (!blockEnt.isRemoved()) {
+                        Vec3 currentPos = blockEnt.position();
+                        Vec3 desired = data.attractorPoint.subtract(currentPos).normalize().scale(0.2);
+                        blockEnt.setDeltaMovement(desired);
                     }
-                    it.remove();
                 }
+                // Attirer également les entités dans un rayon de 15 avec force réduite
+                AABB pullAABB = new AABB(
+                        data.targetPos.getX() - 15, data.targetPos.getY() - 15, data.targetPos.getZ() - 15,
+                        data.targetPos.getX() + 15, data.targetPos.getY() + 15, data.targetPos.getZ() + 15
+                );
+                for (Entity e : level.getEntities(null, pullAABB)) {
+                    Vec3 delta = data.attractorPoint.subtract(e.position());
+                    if (delta.length() > 0) {
+                        Vec3 force = delta.normalize().scale(0.2);
+                        e.setDeltaMovement(force);
+                    }
+                }
+
+                // Dès 120 ticks, commencer la construction progressive couche par couche
+                int formationDelay = 20*10;  // délai initial
+                int layerInterval = 5;     // une nouvelle couche toutes les 5 ticks
+                int maxRadius = 10;        // rayon maximal final de la sphère et du creux fixé à 10 blocs
+                if (elapsed >= formationDelay) {
+                    int newLayer = (int) ((elapsed - formationDelay) / layerInterval);
+                    if (newLayer > data.currentLayer) {
+                        data.currentLayer = newLayer;
+                        if (data.currentLayer > maxRadius) {
+                            data.currentLayer = maxRadius;
+                            data.sphereFormed = true;
+                        }
+                        // Construction progressive de la sphère au-dessus du point attracteur
+                        BlockPos center = new BlockPos(
+                                (int) Math.floor(data.attractorPoint.x),
+                                (int) Math.floor(data.attractorPoint.y),
+                                (int) Math.floor(data.attractorPoint.z)
+                        );
+                        for (int x = -data.currentLayer; x <= data.currentLayer; x++) {
+                            for (int y = -data.currentLayer; y <= data.currentLayer; y++) {
+                                for (int z = -data.currentLayer; z <= data.currentLayer; z++) {
+                                    double dist = Math.sqrt(x * x + y * y + z * z);
+                                    if (dist <= data.currentLayer && dist <= maxRadius) {
+                                        BlockPos pos = center.offset(x, y, z);
+                                        level.setBlock(pos, Blocks.DIRT.defaultBlockState(), 3);
+                                    }
+                                }
+                            }
+                        }
+                        // Creusement progressif du sol en formant une demi-sphère sous la cible
+                        BlockPos groundCenter = data.targetPos;
+                        for (int x = -data.currentLayer; x <= data.currentLayer; x++) {
+                            for (int z = -data.currentLayer; z <= data.currentLayer; z++) {
+                                for (int y = -data.currentLayer; y <= 0; y++) {
+                                    double dist = Math.sqrt(x * x + y * y + z * z);
+                                    if (dist <= data.currentLayer && dist <= maxRadius) {
+                                        BlockPos pos = groundCenter.offset(x, y, z);
+                                        level.setBlock(pos, Blocks.AIR.defaultBlockState(), 3);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Une fois que la sphère est formée (currentLayer == maxRadius) et que le délai total est écoulé, déclencher l'explosion
+            if (data.sphereFormed && elapsed >= data.explosionDelayTicks) {
+                Vec3 exp = data.attractorPoint;
+                level.explode(null, exp.x, exp.y, exp.z, 100.0F, Level.ExplosionInteraction.TNT);
+                it.remove();
             }
         }
     }
 
     @Override
     public boolean handleCost(Player player, INinjaData ninjaData, int chargeAmount) {
-        int chakraCost = 70;
+        int chakraCost = 100;
         if (ninjaData.getChakra() < chakraCost) {
             player.displayClientMessage(
                     Component.translatable("jutsu.fail.notenoughchakra",
