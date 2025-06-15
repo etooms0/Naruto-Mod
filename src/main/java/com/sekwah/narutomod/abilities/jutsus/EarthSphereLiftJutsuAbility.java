@@ -9,6 +9,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.item.FallingBlockEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Explosion;
@@ -114,23 +115,21 @@ public class EarthSphereLiftJutsuAbility extends Ability implements Ability.Cool
         // Définir le point attracteur : 80 blocs au-dessus de la cible
         Vec3 attractor = targetPosVec.add(0, 80, 0);
 
-        // Attirer immédiatement les entités dans un rayon de 10 blocs autour de la cible
+        // Attirer immédiatement toutes les entités vivantes (mobs, joueurs, etc.) dans un rayon de 15 autour de la cible
         AABB entityAABB = new AABB(
-                targetPosVec.x - 10, targetPosVec.y - 10, targetPosVec.z - 10,
-                targetPosVec.x + 10, targetPosVec.y + 10, targetPosVec.z + 10
+                targetPosVec.x - 15, targetPosVec.y - 15, targetPosVec.z - 15,
+                targetPosVec.x + 15, targetPosVec.y + 15, targetPosVec.z + 15
         );
-        for (Entity e : level.getEntities(null, entityAABB)) {
-            if (e != target) {
-                Vec3 delta = attractor.subtract(e.position());
-                if (delta.length() > 0) {
-                    // Déplacement plus lent
-                    Vec3 velocity = delta.normalize().scale(0.2);
-                    e.setDeltaMovement(velocity);
-                }
+        for (Entity e : level.getEntitiesOfClass(LivingEntity.class, entityAABB)) {
+            LivingEntity living = (LivingEntity) e;
+            Vec3 delta = attractor.subtract(living.position());
+            if (delta.length() > 0) {
+                Vec3 velocity = delta.normalize().scale(0.2);
+                living.setDeltaMovement(velocity);
             }
         }
 
-        // Pour les blocs du sol, on scanne une zone restreinte autour de la cible (rayon horizontal 7, vertical 7 ≈ ±3)
+        // Pour les blocs du sol, on scanne une zone restreinte autour de la cible (rayon horizontal 7, hauteur ≈7)
         int horizRadius = 7;
         int verticalRange = 7;
         BlockPos targetPos = target.blockPosition();
@@ -138,9 +137,9 @@ public class EarthSphereLiftJutsuAbility extends Ability implements Ability.Cool
         // Création des données d'attraction avec un délai total avant explosion de 240 ticks
         AttractorData data = new AttractorData(level, attractor, targetPos, level.getGameTime(), 20*20);
 
-        // Limiter le spawn : environ 10 % des blocs candidats sont traités
+        // Augmenter le nombre de FallingBlockEntity : environ 30 % des blocs candidats seront transformés
         RandomSource random = level.getRandom();
-        float spawnChance = 0.1f;
+        float spawnChance = 0.3f;
 
         // Récupérer le champ privé "blockState" de FallingBlockEntity via réflexion
         Field blockStateField = null;
@@ -173,7 +172,6 @@ public class EarthSphereLiftJutsuAbility extends Ability implements Ability.Cool
                             }
                         }
                         fallingBlock.setNoGravity(true);
-                        // Calculer la direction linéaire vers le point attracteur (vitesse réduite)
                         Vec3 blockCenter = new Vec3(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5);
                         Vec3 motion = attractor.subtract(blockCenter).normalize().scale(0.2);
                         fallingBlock.setDeltaMovement(motion);
@@ -198,9 +196,8 @@ public class EarthSphereLiftJutsuAbility extends Ability implements Ability.Cool
             long currentTick = level.getGameTime();
             long elapsed = currentTick - data.startTick;
 
-            // Phase de formation : pendant cette phase, on continue d'attirer les falling blocks et entités
+            // Pendant la formation, attirer les FallingBlockEntity et les entités vivantes
             if (!data.sphereFormed) {
-                // Mettre à jour le déplacement des falling blocks vers le point attracteur
                 for (Entity blockEnt : data.fallingBlocks) {
                     if (!blockEnt.isRemoved()) {
                         Vec3 currentPos = blockEnt.position();
@@ -208,23 +205,23 @@ public class EarthSphereLiftJutsuAbility extends Ability implements Ability.Cool
                         blockEnt.setDeltaMovement(desired);
                     }
                 }
-                // Attirer également les entités dans un rayon de 15 avec force réduite
                 AABB pullAABB = new AABB(
                         data.targetPos.getX() - 15, data.targetPos.getY() - 15, data.targetPos.getZ() - 15,
                         data.targetPos.getX() + 15, data.targetPos.getY() + 15, data.targetPos.getZ() + 15
                 );
-                for (Entity e : level.getEntities(null, pullAABB)) {
-                    Vec3 delta = data.attractorPoint.subtract(e.position());
+                for (Entity e : level.getEntitiesOfClass(LivingEntity.class, pullAABB)) {
+                    LivingEntity living = (LivingEntity) e;
+                    Vec3 delta = data.attractorPoint.subtract(living.position());
                     if (delta.length() > 0) {
                         Vec3 force = delta.normalize().scale(0.2);
-                        e.setDeltaMovement(force);
+                        living.setDeltaMovement(force);
                     }
                 }
 
                 // Dès 120 ticks, commencer la construction progressive couche par couche
-                int formationDelay = 20*10;  // délai initial
-                int layerInterval = 5;     // une nouvelle couche toutes les 5 ticks
-                int maxRadius = 10;        // rayon maximal final de la sphère et du creux fixé à 10 blocs
+                int formationDelay = 20*8;
+                int layerInterval = 5;
+                int maxRadius = 10;
                 if (elapsed >= formationDelay) {
                     int newLayer = (int) ((elapsed - formationDelay) / layerInterval);
                     if (newLayer > data.currentLayer) {
@@ -233,7 +230,6 @@ public class EarthSphereLiftJutsuAbility extends Ability implements Ability.Cool
                             data.currentLayer = maxRadius;
                             data.sphereFormed = true;
                         }
-                        // Construction progressive de la sphère au-dessus du point attracteur
                         BlockPos center = new BlockPos(
                                 (int) Math.floor(data.attractorPoint.x),
                                 (int) Math.floor(data.attractorPoint.y),
@@ -250,7 +246,6 @@ public class EarthSphereLiftJutsuAbility extends Ability implements Ability.Cool
                                 }
                             }
                         }
-                        // Creusement progressif du sol en formant une demi-sphère sous la cible
                         BlockPos groundCenter = data.targetPos;
                         for (int x = -data.currentLayer; x <= data.currentLayer; x++) {
                             for (int z = -data.currentLayer; z <= data.currentLayer; z++) {
@@ -267,10 +262,9 @@ public class EarthSphereLiftJutsuAbility extends Ability implements Ability.Cool
                 }
             }
 
-            // Une fois que la sphère est formée (currentLayer == maxRadius) et que le délai total est écoulé, déclencher l'explosion
             if (data.sphereFormed && elapsed >= data.explosionDelayTicks) {
                 Vec3 exp = data.attractorPoint;
-                level.explode(null, exp.x, exp.y, exp.z, 100.0F, Level.ExplosionInteraction.TNT);
+                level.explode(null, exp.x, exp.y, exp.z, 110.0F, Level.ExplosionInteraction.TNT);
                 it.remove();
             }
         }
@@ -282,7 +276,8 @@ public class EarthSphereLiftJutsuAbility extends Ability implements Ability.Cool
         if (ninjaData.getChakra() < chakraCost) {
             player.displayClientMessage(
                     Component.translatable("jutsu.fail.notenoughchakra",
-                            Component.translatable(this.getTranslationKey(ninjaData)).withStyle(ChatFormatting.YELLOW)),
+                            Component.translatable(this.getTranslationKey(ninjaData))
+                                    .withStyle(ChatFormatting.YELLOW)),
                     true);
             return false;
         }
