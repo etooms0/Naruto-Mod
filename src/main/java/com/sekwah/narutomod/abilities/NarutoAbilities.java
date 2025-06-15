@@ -45,6 +45,8 @@ public class NarutoAbilities {
 
     public static final RegistryObject<ShadowCloneAbility> SHADOW_CLONE = ABILITY.register("shadow_clone", ShadowCloneAbility::new);
 
+    public static final RegistryObject<EarthSphereLiftJutsuAbility> EARTH_LIFT = ABILITY.register("earth_lift", EarthSphereLiftJutsuAbility::new);
+
     public static final RegistryObject<RinneganSwapAbility> RINNEGAN_SWAP = ABILITY.register("rinnegan_swap", RinneganSwapAbility::new);
 
     public static final RegistryObject<EarthSphereJutsuAbility> EARTH_SPHERE = ABILITY.register("earth_sphere", EarthSphereJutsuAbility::new);
