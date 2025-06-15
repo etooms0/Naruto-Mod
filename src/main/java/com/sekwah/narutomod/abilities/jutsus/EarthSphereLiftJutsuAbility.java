@@ -20,20 +20,17 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-/**
- * Jutsu qui enferme la cible dans une sphère creuse de terre (hollow sphere)
- * et qui l'élève graduellement (l'intégralité de la sphère se déplace) jusqu'à
- * atteindre 50 blocs d'altitude, puis explose.
- */
 @Mod.EventBusSubscriber
 public class EarthSphereLiftJutsuAbility extends Ability implements Ability.Cooldown {
 
-    // Structure pour stocker les données relatives à une sphère en cours de montée.
+    /**
+     * Données associées à une sphère en mouvement.
+     */
     public static class RisingSphereData {
         public final Level level;
         public final BlockPos originalCenter;
         public final int radius;
-        public int currentOffset; // décalage vertical actuel (en blocs)
+        public int currentOffset; // décalage vertical actuel
         public int tickCounter;   // pour contrôler la vitesse de montée
         public final int targetOffset; // hauteur cible en blocs
 
@@ -46,18 +43,18 @@ public class EarthSphereLiftJutsuAbility extends Ability implements Ability.Cool
             this.targetOffset = targetOffset;
         }
 
-        // Retourne le centre actuel (original + offset vertical)
+        // Centre actuel de la sphère (origine + décalage vertical)
         public BlockPos getCurrentCenter() {
             return originalCenter.offset(0, currentOffset, 0);
         }
     }
 
-    // Liste des sphères qui montent actuellement
+    // Liste de toutes les sphères qui montent actuellement
     private static final List<RisingSphereData> activeRisingSpheres = new ArrayList<>();
 
     @Override
     public long defaultCombo() {
-        return 112233;  // Exemple de combo pour ce jutsu
+        return 112233;  // Exemple de combinaison pour ce jutsu
     }
 
     @Override
@@ -71,15 +68,14 @@ public class EarthSphereLiftJutsuAbility extends Ability implements Ability.Cool
     }
 
     /**
-     * Récupère l'entité que le joueur regarde.
+     * Recherche l'entité que le joueur (ServerPlayer) regarde, jusqu'à une distance donnée.
      */
     private Entity getLookedAtEntity(ServerPlayer player, double maxDistance) {
         Vec3 eyePos = player.getEyePosition(1.0F);
         Vec3 lookVec = player.getLookAngle().scale(maxDistance);
         Vec3 targetPos = eyePos.add(lookVec);
 
-        for (Entity entity : player.level().getEntities(player,
-                player.getBoundingBox().expandTowards(lookVec).inflate(1.0))) {
+        for (Entity entity : player.level().getEntities(player, player.getBoundingBox().expandTowards(lookVec).inflate(1.0))) {
             if (entity.getBoundingBox().intersects(eyePos, targetPos)) {
                 return entity;
             }
@@ -92,30 +88,34 @@ public class EarthSphereLiftJutsuAbility extends Ability implements Ability.Cool
         if (!(player instanceof ServerPlayer serverPlayer))
             return;
 
-        // Détection de l'entité visée
+        // Détection de l'entité regardée
         Entity target = getLookedAtEntity(serverPlayer, 50.0);
         if (target == null) {
-            player.displayClientMessage(Component.literal("Aucune entit\u00E9 d\u00E9tect\u00E9e").withStyle(ChatFormatting.RED), true);
+            player.displayClientMessage(
+                    Component.literal("Aucune entit\u00E9 d\u00E9tect\u00E9e dans le champ de vision").withStyle(ChatFormatting.RED),
+                    true);
             return;
         }
         if (target == player) {
-            player.displayClientMessage(Component.literal("Impossible de cibler soi-m\u00EAme").withStyle(ChatFormatting.RED), true);
+            player.displayClientMessage(
+                    Component.literal("Impossible de cibler soi-m\u00EAme").withStyle(ChatFormatting.RED),
+                    true);
             return;
         }
 
         Level level = serverPlayer.level();
-        int radius = 5; // La coquille aura un diamètre d'environ 11 blocs.
-        // Création initiale de la sphère creuse autour de la cible
+        int radius = 5;  // La sphère aura un diamètre d'environ 11 blocs.
+        // Crée la sphère creuse autour de la cible
         createHollowEarthSphere(level, target, radius);
 
-        // Stocker la sphère pour la faire monter : on veut qu'elle atteigne 50 blocs
+        // Stocke la sphère pour le déplacement : ici, on veut qu'elle monte de 50 blocs
         BlockPos center = target.blockPosition();
         activeRisingSpheres.add(new RisingSphereData(level, center, radius, 50));
     }
 
     /**
-     * Crée une sphère creuse (coquille) autour de l'entité cible.
-     * On place des blocs de terre uniquement sur la surface (où la distance par rapport au centre est > radius - 1 et ≤ radius).
+     * Crée une sphère creuse (coquille) autour de la cible.
+     * Seuls les voxels dont la distance est comprise entre (radius - 1) et radius sont remplacés par de la terre.
      */
     private void createHollowEarthSphere(Level level, Entity target, int radius) {
         BlockPos center = target.blockPosition();
@@ -123,9 +123,11 @@ public class EarthSphereLiftJutsuAbility extends Ability implements Ability.Cool
             for (int y = -radius; y <= radius; y++) {
                 for (int z = -radius; z <= radius; z++) {
                     double distance = Math.sqrt(x * x + y * y + z * z);
-                    if (distance <= radius && distance > radius - 1) {
+                    if (distance <= radius && distance > (radius - 1)) {
                         BlockPos pos = center.offset(x, y, z);
-                        level.setBlock(pos, Blocks.DIRT.defaultBlockState(), 3);
+                        if (level.isEmptyBlock(pos)) { // on peut choisir de ne remplacer que l'air
+                            level.setBlock(pos, Blocks.DIRT.defaultBlockState(), 3);
+                        }
                     }
                 }
             }
@@ -133,17 +135,14 @@ public class EarthSphereLiftJutsuAbility extends Ability implements Ability.Cool
     }
 
     /**
-     * Supprime l'intégralité de la coquille de la sphère à partir du centre décalé.
-     * On parcourt tous les voxels définissant la coquille (condition sur la distance) et on les remplace par de l'air.
-     *
-     * @param currentOffset décalage vertical à appliquer au centre d'origine
+     * Supprime l'intégralité de la coquille (les blocs de terre) à la position donnée.
      */
     private static void removeEntireSphere(Level level, BlockPos center, int radius, int currentOffset) {
         for (int x = -radius; x <= radius; x++) {
             for (int y = -radius; y <= radius; y++) {
                 for (int z = -radius; z <= radius; z++) {
                     double distance = Math.sqrt(x * x + y * y + z * z);
-                    if (distance <= radius && distance > radius - 1) {
+                    if (distance <= radius && distance > (radius - 1)) {
                         BlockPos pos = center.offset(x, y + currentOffset, z);
                         if (level.getBlockState(pos).getBlock() == Blocks.DIRT) {
                             level.setBlock(pos, Blocks.AIR.defaultBlockState(), 3);
@@ -155,14 +154,14 @@ public class EarthSphereLiftJutsuAbility extends Ability implements Ability.Cool
     }
 
     /**
-     * Place l'intégralité de la coquille de la sphère à partir du centre décalé.
+     * Place l'intégralité de la coquille (les blocs de terre) à la position donnée (centre décalé).
      */
     private static void placeEntireSphere(Level level, BlockPos center, int radius, int currentOffset) {
         for (int x = -radius; x <= radius; x++) {
             for (int y = -radius; y <= radius; y++) {
                 for (int z = -radius; z <= radius; z++) {
                     double distance = Math.sqrt(x * x + y * y + z * z);
-                    if (distance <= radius && distance > radius - 1) {
+                    if (distance <= radius && distance > (radius - 1)) {
                         BlockPos pos = center.offset(x, y + currentOffset, z);
                         level.setBlock(pos, Blocks.DIRT.defaultBlockState(), 3);
                     }
@@ -172,53 +171,54 @@ public class EarthSphereLiftJutsuAbility extends Ability implements Ability.Cool
     }
 
     /**
-     * Cet événement est appelé chaque tick serveur.
-     * Il fait monter progressivement chaque sphère active.
-     * Ici, on fait monter la sphère d'une unité toutes les 2 ticks.
+     * Cet événement se déclenche chaque tick serveur.
+     * La sphère active monte progressivement :
+     * - On retire la version à l'offset précédent, on incrémente l'offset et on replace l'intégralité de la coquille à la nouvelle altitude.
+     * - On téléporte ensuite toutes les entités dans la zone vers le haut pour qu'elles montent avec la structure.
+     * - Lorsque l'offset atteint la hauteur cible (50 blocs), on déclenche une explosion et on efface la structure.
      */
     @SubscribeEvent
     public static void onServerTick(TickEvent.ServerTickEvent event) {
-        if (event.phase != TickEvent.Phase.END)
-            return;
+        if (event.phase != TickEvent.Phase.END) return;
 
         Iterator<RisingSphereData> it = activeRisingSpheres.iterator();
         while (it.hasNext()) {
             RisingSphereData sphere = it.next();
             sphere.tickCounter++;
-            if (sphere.tickCounter >= 2) { // montée plus rapide : 1 bloc toutes les 2 ticks
+            // Pour une montée plus rapide, ici on déplace la sphère d'un bloc chaque tick.
+            if (sphere.tickCounter >= 1) {
                 sphere.tickCounter = 0;
                 Level level = sphere.level;
-                // Retirer l'ancienne position de la sphère si ce n'est pas la première mise en place.
-                if (sphere.currentOffset >= 0) {
-                    removeEntireSphere(level, sphere.originalCenter, sphere.radius, sphere.currentOffset);
-                }
-                // Augmenter le décalage vertical
-                sphere.currentOffset++;
-
-                // Placer la sphère à la nouvelle position
+                // Supprimer l'ancienne position de la sphère
+                removeEntireSphere(level, sphere.originalCenter, sphere.radius, sphere.currentOffset);
+                // Incrémentez l'offset (vous pouvez augmenter cette valeur pour accélérer davantage)
+                sphere.currentOffset += 1;
+                // Placez toute la sphère à la nouvelle position
                 placeEntireSphere(level, sphere.originalCenter, sphere.radius, sphere.currentOffset);
 
-                // Téléporter toutes les entités présentes dans le volume de la nouvelle sphère pour qu'elles montent avec elle.
+                // Téléportation des entités situées dans la zone de la sphère pour qu'elles montent avec elle
                 BlockPos currentCenter = sphere.getCurrentCenter();
                 level.getEntities(null, new net.minecraft.world.phys.AABB(
                         currentCenter.getX() - sphere.radius, currentCenter.getY() - sphere.radius,
                         currentCenter.getZ() - sphere.radius,
                         currentCenter.getX() + sphere.radius, currentCenter.getY() + sphere.radius,
                         currentCenter.getZ() + sphere.radius)).forEach(entity -> {
-                    // On téléporte l'entité de 1 bloc vers le haut.
                     entity.teleportTo(entity.getX(), entity.getY() + 1, entity.getZ());
                 });
 
-                // Si le décalage atteint la hauteur cible (ici 50 blocs)
+                // Si l'offset atteint la hauteur cible (50 blocs)
                 if (sphere.currentOffset >= sphere.targetOffset) {
-                    // Déclencher l'explosion final
                     Vec3 explosionPos = new Vec3(
                             currentCenter.getX() + 0.5,
                             currentCenter.getY() + 0.5,
                             currentCenter.getZ() + 0.5);
+                    // Déclenche l'explosion destructive.
                     level.explode(null, explosionPos.x, explosionPos.y, explosionPos.z, 4.0F, Level.ExplosionInteraction.TNT);
-                    // Supprimer la sphère (effacer tous les blocs)
-                    removeEntireSphere(level, sphere.originalCenter, sphere.radius, sphere.currentOffset);
+
+                    // Efface toutes les couches de la structure
+                    for (int i = 0; i < sphere.currentOffset; i++) {
+                        removeEntireSphere(level, sphere.originalCenter, sphere.radius, i);
+                    }
                     it.remove();
                 }
             }
