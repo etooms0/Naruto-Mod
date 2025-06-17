@@ -7,6 +7,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
@@ -35,18 +36,21 @@ public class EarthSphereJutsuAbility extends Ability implements Ability.Cooldown
      * Récupère l'entité que le joueur ServerPlayer regarde jusqu'à maxDistance.
      * On parcourt toutes les entités situées dans l'AABB étendue vers la direction du regard.
      */
-    private Entity getLookedAtEntity(ServerPlayer player, double maxDistance) {
+    private LivingEntity getLookedAtEntity(ServerPlayer player, double maxDistance) {
         Vec3 eyePos = player.getEyePosition(1.0F);
         Vec3 lookVec = player.getLookAngle().scale(maxDistance);
         Vec3 targetPos = eyePos.add(lookVec);
 
         for (Entity entity : player.level().getEntities(player, player.getBoundingBox().expandTowards(lookVec).inflate(1.0))) {
-            if (entity.getBoundingBox().intersects(eyePos, targetPos)) {
-                return entity;
+            if (entity instanceof LivingEntity livingEntity &&
+                    entity != player && // évite soi-même
+                    entity.getBoundingBox().intersects(eyePos, targetPos)) {
+                return livingEntity;
             }
         }
         return null;
     }
+
 
     @Override
     public void performServer(Player player, INinjaData ninjaData, int chargeAmount) {
