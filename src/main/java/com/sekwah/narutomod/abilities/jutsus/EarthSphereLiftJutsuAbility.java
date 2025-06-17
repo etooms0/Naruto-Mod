@@ -113,7 +113,7 @@ public class EarthSphereLiftJutsuAbility extends Ability implements Ability.Cool
         Vec3 targetPosVec = target.position();
 
         // Définir le point attracteur : 80 blocs au-dessus de la cible
-        Vec3 attractor = targetPosVec.add(0, 80, 0);
+        Vec3 attractor = targetPosVec.add(0, 20, 0);
 
         // Attirer immédiatement toutes les entités vivantes (mobs, joueurs, etc.) dans un rayon de 15 autour de la cible
         AABB entityAABB = new AABB(
