@@ -2,6 +2,8 @@ package com.sekwah.narutomod.abilities.jutsus;
 
 import com.sekwah.narutomod.abilities.Ability;
 import com.sekwah.narutomod.capabilities.INinjaData;
+import com.sekwah.narutomod.network.PacketHandler;
+import com.sekwah.narutomod.network.s2c.ClientAttractionPacket;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
@@ -39,15 +41,18 @@ public class EarthSphereLiftJutsuAbility extends Ability implements Ability.Cool
         public final List<Entity> fallingBlocks = new ArrayList<>();
         public boolean sphereFormed = false;
         public int currentLayer = 0;
+        public final Entity caster;  // <- Ajout du lanceur ici
 
-        public AttractorData(Level level, Vec3 attractorPoint, BlockPos targetPos, long startTick, long explosionDelayTicks) {
+        public AttractorData(Level level, Vec3 attractorPoint, BlockPos targetPos, long startTick, long explosionDelayTicks, Entity caster) {
             this.level = level;
             this.attractorPoint = attractorPoint;
             this.targetPos = targetPos;
             this.startTick = startTick;
             this.explosionDelayTicks = explosionDelayTicks;
+            this.caster = caster;  // Initialisation du lanceur
         }
     }
+
 
     private static final List<AttractorData> activeAttractors = new ArrayList<>();
 
@@ -109,6 +114,8 @@ public class EarthSphereLiftJutsuAbility extends Ability implements Ability.Cool
             if (delta.length() > 0) {
                 Vec3 velocity = delta.normalize().scale(0.6); // vitesse augmentée
                 living.setDeltaMovement(velocity);
+                PacketHandler.sentToTracking(new ClientAttractionPacket(living.getId(), velocity), living);
+
             }
         }
 
@@ -116,7 +123,7 @@ public class EarthSphereLiftJutsuAbility extends Ability implements Ability.Cool
         int verticalRange = 7;
         BlockPos targetPos = target.blockPosition();
 
-        AttractorData data = new AttractorData(level, attractor, targetPos, level.getGameTime(), 20*10);
+        AttractorData data = new AttractorData(level, attractor, targetPos, level.getGameTime(), 20 * 10, player);
         RandomSource random = level.getRandom();
         float spawnChance = 0.3f;
 
@@ -159,11 +166,11 @@ public class EarthSphereLiftJutsuAbility extends Ability implements Ability.Cool
 
         activeAttractors.add(data);
     }
-
     @SubscribeEvent
     public static void onServerTick(TickEvent.ServerTickEvent event) {
-        if (event.phase != TickEvent.Phase.END)
-            return;
+        // Ne traiter qu'à la fin de la tick pour éviter les doubles calculs
+        if (event.phase != TickEvent.Phase.END) return;
+
         Iterator<AttractorData> it = activeAttractors.iterator();
         while (it.hasNext()) {
             AttractorData data = it.next();
@@ -172,42 +179,60 @@ public class EarthSphereLiftJutsuAbility extends Ability implements Ability.Cool
             long elapsed = currentTick - data.startTick;
 
             if (!data.sphereFormed) {
+                // Attirer les FallingBlockEntities vers le point d’attraction
                 for (Entity blockEnt : data.fallingBlocks) {
                     if (!blockEnt.isRemoved()) {
                         Vec3 currentPos = blockEnt.position();
-                        Vec3 desired = data.attractorPoint.subtract(currentPos).normalize().scale(0.6); // vitesse augmentée
-                        blockEnt.setDeltaMovement(desired);
+                        Vec3 direction = data.attractorPoint.subtract(currentPos).normalize().scale(0.6);
+                        blockEnt.setDeltaMovement(direction);
                     }
                 }
+
+                // Attirer les LivingEntities dans un AABB autour du point d’attraction
                 AABB pullAABB = new AABB(
                         data.targetPos.getX() - 15, data.targetPos.getY() - 15, data.targetPos.getZ() - 15,
                         data.targetPos.getX() + 15, data.targetPos.getY() + 15, data.targetPos.getZ() + 15
                 );
-                for (Entity e : level.getEntitiesOfClass(LivingEntity.class, pullAABB)) {
-                    LivingEntity living = (LivingEntity) e;
+
+                for (LivingEntity living : level.getEntitiesOfClass(LivingEntity.class, pullAABB)) {
+                    // Exclure le lanceur pour ne pas s'attirer soi-même
+                    if (living == data.caster) continue;
+
                     Vec3 delta = data.attractorPoint.subtract(living.position());
                     if (delta.length() > 0) {
-                        Vec3 force = delta.normalize().scale(0.6); // vitesse augmentée
+                        Vec3 force = delta.normalize().scale(0.6);
                         living.setDeltaMovement(force);
+
+                        // Envoi du paquet au joueur ciblé pour synchroniser client/serveur
+                        if (living instanceof ServerPlayer serverPlayer) {
+                            PacketHandler.sendToPlayer(new ClientAttractionPacket(living.getId(), force), serverPlayer);
+                        }
+                        PacketHandler.sentToTracking(new ClientAttractionPacket(living.getId(), force), living);
                     }
                 }
 
-                int formationDelay = 20; // délai réduit à 20 ticks (1 seconde)
-                int layerInterval = 5;
-                int maxRadius = 10;
+                // Formation progressive de la sphère
+                final int formationDelay = 20; // ticks avant début formation sphère
+                final int layerInterval = 5;   // ticks entre ajout de couches
+                final int maxRadius = 10;      // rayon max de la sphère
+
                 if (elapsed >= formationDelay) {
                     int newLayer = (int) ((elapsed - formationDelay) / layerInterval);
+
                     if (newLayer > data.currentLayer) {
-                        data.currentLayer = newLayer;
-                        if (data.currentLayer > maxRadius) {
-                            data.currentLayer = maxRadius;
+                        data.currentLayer = Math.min(newLayer, maxRadius);
+
+                        if (data.currentLayer == maxRadius) {
                             data.sphereFormed = true;
                         }
+
                         BlockPos center = new BlockPos(
                                 (int) Math.floor(data.attractorPoint.x),
                                 (int) Math.floor(data.attractorPoint.y),
                                 (int) Math.floor(data.attractorPoint.z)
                         );
+
+                        // Pose des blocs DIRT en forme sphérique
                         for (int x = -data.currentLayer; x <= data.currentLayer; x++) {
                             for (int y = -data.currentLayer; y <= data.currentLayer; y++) {
                                 for (int z = -data.currentLayer; z <= data.currentLayer; z++) {
@@ -219,6 +244,8 @@ public class EarthSphereLiftJutsuAbility extends Ability implements Ability.Cool
                                 }
                             }
                         }
+
+                        // Nettoyage de l’air sous la sphère (retirer bloc sous le centre)
                         BlockPos groundCenter = data.targetPos;
                         for (int x = -data.currentLayer; x <= data.currentLayer; x++) {
                             for (int z = -data.currentLayer; z <= data.currentLayer; z++) {
@@ -235,28 +262,37 @@ public class EarthSphereLiftJutsuAbility extends Ability implements Ability.Cool
                 }
             }
 
-
-
+            // Explosion et nettoyage après formation de la sphère
             if (data.sphereFormed && elapsed >= data.explosionDelayTicks) {
-                Vec3 exp = data.attractorPoint;
-                BlockPos center = new BlockPos((int) Math.floor(exp.x), (int) Math.floor(exp.y), (int) Math.floor(exp.z));
-                int radius = 10;
+                Vec3 expCenter = data.attractorPoint;
+                BlockPos centerPos = new BlockPos(
+                        (int) Math.floor(expCenter.x),
+                        (int) Math.floor(expCenter.y),
+                        (int) Math.floor(expCenter.z)
+                );
+                final int radius = 10;
+
+                // Suppression blocs DIRT formant la sphère
                 for (int x = -radius; x <= radius; x++) {
                     for (int y = -radius; y <= radius; y++) {
                         for (int z = -radius; z <= radius; z++) {
-                            BlockPos pos = center.offset(x, y, z);
+                            BlockPos pos = centerPos.offset(x, y, z);
                             if (level.getBlockState(pos).is(Blocks.DIRT)) {
                                 level.setBlock(pos, Blocks.AIR.defaultBlockState(), 3);
                             }
                         }
                     }
                 }
-                level.explode(null, exp.x, exp.y, exp.z, 10.0F, true, Level.ExplosionInteraction.TNT);
 
+                // Explosion sans drop d’items (TNT-style)
+                level.explode(null, expCenter.x, expCenter.y, expCenter.z, 4.0F, true, Level.ExplosionInteraction.TNT);
+
+                // Suppression de l’attracteur de la liste active
                 it.remove();
             }
         }
     }
+
 
     @Override
     public boolean handleCost(Player player, INinjaData ninjaData, int chargeAmount) {
