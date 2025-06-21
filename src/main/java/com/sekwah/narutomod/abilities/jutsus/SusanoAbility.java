@@ -39,30 +39,29 @@ public class SusanoAbility extends Ability implements Ability.Cooldown {
 
     @Override
     public void performServer(Player player, INinjaData ninjaData, int ticksActive) {
-        System.out.println("[SusanoAbility] --> performServer START");
-        System.out.println("  player = " + player.getName().getString()
-                + " / chakra = " + ninjaData.getChakra());
+        // … tes logs, cost, etc.
 
-        // instanciation
         SusanoEntity susano = new SusanoEntity(NarutoEntities.SUSANO.get(), player.level());
-        System.out.println("[SusanoAbility] new SusanoEntity created: " + susano);
-
         susano.setOwner(player);
-        System.out.println("[SusanoAbility] owner set on Susano");
 
-        susano.setPos(player.getX(), player.getY(), player.getZ());
-        System.out.println("[SusanoAbility] position set to " + player.blockPosition());
-
+        // 1) Position
+        double x = player.getX();
+        double y = player.getY();
+        double z = player.getZ();
+        susano.setPos(x, y, z);
+        // 2) Copie de la rotation du regard
+        float yaw   = player.getYRot();  // gauche/droite
+        float pitch = player.getXRot();  // haut/bas
+        susano.setYRot(yaw);
+        susano.setXRot(pitch);
+        // 3) Pour que le renderer oriente TOUT le corps
+        susano.yBodyRot = yaw;           // rotation du buste
+        susano.yHeadRot = player.yHeadRot; // rotation de la tête (identique ici)
+        // 4) Maintenant on spawn
         player.level().addFreshEntity(susano);
-        System.out.println("[SusanoAbility] addFreshEntity CALLED");
 
-        System.out.println("[SusanoAbility] scheduling discard in 1200 ticks");
-        ninjaData.scheduleDelayedTickEvent(delayed -> {
-            System.out.println("[SusanoAbility] discard callback fired");
-            susano.discard();
-        }, 60 * 20);
-
-        System.out.println("[SusanoAbility] --> performServer END");
+        // 5) Disparition auto
+        ninjaData.scheduleDelayedTickEvent(delayed -> susano.discard(), 60 * 20);
     }
 
     @Override

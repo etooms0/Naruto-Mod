@@ -18,7 +18,7 @@ import software.bernie.geckolib.core.animation.AnimationController;
 import software.bernie.geckolib.core.object.PlayState;
 import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
 import software.bernie.geckolib.util.GeckoLibUtil;
-import software.bernie.geckolib.core.animatable.instance.SingletonAnimatableInstanceCache;
+
 import javax.annotation.Nullable;
 
 public class SusanoEntity extends Mob implements GeoEntity {
@@ -35,7 +35,6 @@ public class SusanoEntity extends Mob implements GeoEntity {
         this.setInvulnerable(true);
     }
 
-
     public void setOwner(Player player) {
         this.owner = player;
     }
@@ -47,44 +46,54 @@ public class SusanoEntity extends Mob implements GeoEntity {
 
     @Override
     public boolean hurt(DamageSource source, float amount) {
-        // Toujours refuser tout dommage
-        return false;
+        return false;  // immune
     }
 
     @Override
     public boolean canBeCollidedWith() {
-        // Désactive toute collision physique
         return false;
     }
 
     @Override
     public boolean isPickable() {
-        // IGNORE Susano lors du ray-trace (clic et attaque)
         return false;
     }
 
     @Override
     public boolean isInvulnerableTo(DamageSource source) {
-        // Toujours invulnérable
         return true;
     }
 
     @Override
     public void tick() {
         super.tick();
-        // côté client ?
+
+        // Ne rien faire côté client
         if (this.level().isClientSide()) {
             return;
         }
-        // serveur seulement
+
+        // Serveur only: maintien en position et orientation
         if (owner != null && owner.isAlive()) {
-            setPos(owner.getX(), owner.getY(), owner.getZ());
+            // 1) Position
+            this.setPos(owner.getX(), owner.getY(), owner.getZ());
+
+            // 2) Regarde où regarde le joueur
+            float yaw   = owner.getYRot();    // rotation gauche/droite
+            float pitch = owner.getXRot();    // rotation haut/bas
+
+            // 3) Appliquer ces rotations
+            this.setYRot(yaw);
+            this.setXRot(pitch);
+
+            // 4) Assurer que le renderer oriente tout le corps et la tête
+            this.yBodyRot = yaw;
+            this.yHeadRot = owner.yHeadRot;
         } else {
             System.out.println("[SusanoEntity] owner invalid → discard()");
             discard();
         }
     }
-
 
     @Override
     public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
@@ -106,8 +115,8 @@ public class SusanoEntity extends Mob implements GeoEntity {
 
     public static AttributeSupplier.Builder createAttributes() {
         return Mob.createMobAttributes()
-                .add(Attributes.MAX_HEALTH, 20.0D)   // ou la vie max que tu veux
-                .add(Attributes.MOVEMENT_SPEED, 0.0D); // Susano ne bouge pas par lui-même
+                .add(Attributes.MAX_HEALTH, 20.0D)
+                .add(Attributes.MOVEMENT_SPEED, 0.0D);
     }
 
     @Override
@@ -116,6 +125,4 @@ public class SusanoEntity extends Mob implements GeoEntity {
         //noinspection unchecked
         return (Packet<ClientGamePacketListener>) NetworkHooks.getEntitySpawningPacket(this);
     }
-
-
 }
