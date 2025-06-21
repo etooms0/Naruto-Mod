@@ -51,6 +51,15 @@ public class NarutoEntities {
                     .sized(0.6F, 1.8F)
                     .clientTrackingRange(8));
 
+    public static final RegistryObject<EntityType<SusanoEntity>> SUSANO = register("susano",
+            EntityType.Builder.<SusanoEntity>of(SusanoEntity::new, MobCategory.MISC)
+                    .sized(1.5F, 3.5F) // adjust the size as needed
+                    .clientTrackingRange(10)
+                    .setTrackingRange(10)
+                    .noSummon() // optional: prevents natural spawning
+                    .fireImmune()); // optional: if desired
+
+
 
     public static final RegistryObject<EntityType<FireballJutsuEntity>> FIREBALL_JUTSU = register("fireball_jutsu",
             EntityType.Builder.<FireballJutsuEntity>of(FireballJutsuEntity::new, MobCategory.MISC).sized(1.5F, 1.5F).clientTrackingRange(4).updateInterval(10));

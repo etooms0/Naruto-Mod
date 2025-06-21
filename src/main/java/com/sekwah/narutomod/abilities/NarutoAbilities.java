@@ -57,6 +57,8 @@ public class NarutoAbilities {
 
     public static final RegistryObject<WaterBulletJutsuAbility> WATER_BULLET = ABILITY.register("water_bullet", WaterBulletJutsuAbility::new);
 
+    public static final RegistryObject<SusanoAbility> SUSANO = ABILITY.register("susano", SusanoAbility::new);
+
     public static final RegistryObject<ChakraChargeAbility> CHAKRA_CHARGE = ABILITY.register("chakra_charge", ChakraChargeAbility::new);
 
     public static final RegistryObject<DoubleJumpAbility> DOUBLE_JUMP = ABILITY.register("double_jump", DoubleJumpAbility::new);
