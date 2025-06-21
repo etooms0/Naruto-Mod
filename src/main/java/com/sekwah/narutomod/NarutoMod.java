@@ -7,7 +7,6 @@ import com.sekwah.narutomod.capabilities.NinjaCapabilityHandler;
 import com.sekwah.narutomod.capabilities.NinjaData;
 import com.sekwah.narutomod.client.gui.NarutoInGameGUI;
 import com.sekwah.narutomod.client.keybinds.NarutoKeyHandler;
-import com.sekwah.narutomod.client.renderer.NarutoRenderEvents;
 import com.sekwah.narutomod.config.NarutoConfig;
 import com.sekwah.narutomod.commands.NarutoCommands;
 import com.sekwah.narutomod.entity.NarutoDataSerialisers;
@@ -35,6 +34,9 @@ import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
+import net.minecraft.client.renderer.entity.EntityRenderers;
+
+import com.sekwah.narutomod.client.renderer.entity.SusanoRenderer;
 import net.minecraftforge.fml.loading.FMLEnvironment;
 
 @Mod(NarutoMod.MOD_ID)
@@ -78,9 +80,15 @@ public class NarutoMod {
     }
 
     private void clientSetup(FMLClientSetupEvent event) {
-        //NarutoRenderEvents.registerRenderTypes();
-        //NarutoWorldRenderEvents.registerEvents();
+        // On s'assure d’exécuter l’enregistrement au bon moment côté client
+        event.enqueueWork(() -> {
+            EntityRenderers.register(
+                    NarutoEntities.SUSANO.get(),
+                    SusanoRenderer::new
+            );
+        });
     }
+
 
     private void setup(FMLCommonSetupEvent event) {
         PacketHandler.init();

@@ -1,15 +1,23 @@
 package com.sekwah.narutomod.entity;
 
-import net.minecraft.server.level.ServerLevel;
-import net.minecraft.world.entity.*;
-import net.minecraft.world.entity.player.Player;
+import net.minecraft.network.protocol.Packet;
+import net.minecraft.network.protocol.game.ClientGamePacketListener;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.MobType;
+import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
+import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.entity.player.Player;
+import net.minecraftforge.network.NetworkHooks;
 import software.bernie.geckolib.animatable.GeoEntity;
-import software.bernie.geckolib.core.animation.*;
+import software.bernie.geckolib.core.animation.AnimatableManager;
+import software.bernie.geckolib.core.animation.RawAnimation;
+import software.bernie.geckolib.core.animation.AnimationController;
 import software.bernie.geckolib.core.object.PlayState;
 import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
 import software.bernie.geckolib.util.GeckoLibUtil;
-
+import software.bernie.geckolib.core.animatable.instance.SingletonAnimatableInstanceCache;
 import javax.annotation.Nullable;
 
 public class SusanoEntity extends Mob implements GeoEntity {
@@ -19,29 +27,15 @@ public class SusanoEntity extends Mob implements GeoEntity {
 
     public SusanoEntity(EntityType<? extends SusanoEntity> type, Level level) {
         super(type, level);
+        System.out.println("[SusanoEntity] <ctor> on level " + level.dimension().location());
         this.setNoGravity(true);
-        this.setBoundingBox(this.getBoundingBox().inflate(0.0)); // facultatif
         this.setNoAi(true);
         this.setInvulnerable(true);
     }
 
+
     public void setOwner(Player player) {
         this.owner = player;
-    }
-
-    @Override
-    public boolean canBeCollidedWith() {
-        return false;
-    }
-
-    @Override
-    public boolean isPickable() {
-        return false;
-    }
-
-    @Override
-    public boolean isPushable() {
-        return false;
     }
 
     @Nullable
@@ -52,12 +46,19 @@ public class SusanoEntity extends Mob implements GeoEntity {
     @Override
     public void tick() {
         super.tick();
+        // côté client ?
+        if (this.level().isClientSide()) {
+            return;
+        }
+        // serveur seulement
         if (owner != null && owner.isAlive()) {
-            this.setPos(owner.getX(), owner.getY(), owner.getZ());
+            setPos(owner.getX(), owner.getY(), owner.getZ());
         } else {
-            this.discard();
+            System.out.println("[SusanoEntity] owner invalid → discard()");
+            discard();
         }
     }
+
 
     @Override
     public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
@@ -77,8 +78,18 @@ public class SusanoEntity extends Mob implements GeoEntity {
         return MobType.UNDEFINED;
     }
 
-    @Nullable
-    public SusanoEntity getBreedOffspring(ServerLevel level, AgeableMob parent) {
-        return null;
+    public static AttributeSupplier.Builder createAttributes() {
+        return Mob.createMobAttributes()
+                .add(Attributes.MAX_HEALTH, 20.0D)   // ou la vie max que tu veux
+                .add(Attributes.MOVEMENT_SPEED, 0.0D); // Susano ne bouge pas par lui-même
     }
+
+    @Override
+    public Packet<ClientGamePacketListener> getAddEntityPacket() {
+        System.out.println("[SusanoEntity] getAddEntityPacket() called");
+        //noinspection unchecked
+        return (Packet<ClientGamePacketListener>) NetworkHooks.getEntitySpawningPacket(this);
+    }
+
+
 }

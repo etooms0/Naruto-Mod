@@ -4,6 +4,7 @@ import com.sekwah.narutomod.NarutoMod;
 import com.sekwah.narutomod.block.NarutoBlocks;
 import com.sekwah.narutomod.client.model.entity.ShadowCloneModel;
 import com.sekwah.narutomod.client.model.entity.SubstitutionLogModel;
+import com.sekwah.narutomod.client.model.entity.SusanoModel;
 import com.sekwah.narutomod.client.model.item.model.*;
 import com.sekwah.narutomod.client.model.jutsu.FireballJutsuModel;
 import com.sekwah.narutomod.client.model.jutsu.WaterBulletModel;
@@ -42,6 +43,8 @@ public class NarutoRenderEvents {
         event.registerEntityRenderer(NarutoEntities.FIREBALL_JUTSU.get(), FireballJutsuRenderer::new);
         event.registerEntityRenderer(NarutoEntities.WATER_BULLET_JUTSU.get(), WaterBulletJutsuRenderer::new);
         event.registerEntityRenderer(NarutoEntities.SHADOW_CLONE.get(), ShadowCloneRenderer::new);
+        event.registerEntityRenderer(NarutoEntities.SUSANO.get(), SusanoRenderer::new);
+        System.out.println("[RenderEvents] SusanoRenderer enregistré");
 
         event.registerEntityRenderer(NarutoEntities.SUBSTITUTION_LOG.get(), SubstitutionLogRenderer::new);
 
@@ -69,9 +72,11 @@ public class NarutoRenderEvents {
         event.registerLayerDefinition(FireballJutsuModel.LAYER_LOCATION, FireballJutsuModel::createLayer);
         event.registerLayerDefinition(WaterBulletModel.LAYER_LOCATION, WaterBulletModel::createLayer);
 
+
         // Entity
         event.registerLayerDefinition(SubstitutionLogModel.LAYER_LOCATION, SubstitutionLogModel::createBodyLayer);
         event.registerLayerDefinition(ShadowCloneModel.LAYER_LOCATION, ShadowCloneModel::createBodyLayer);
+
     }
 
 /*    @SubscribeEvent

@@ -6,9 +6,7 @@ import com.sekwah.narutomod.entity.NarutoEntities;
 import com.sekwah.narutomod.entity.SusanoEntity;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.phys.Vec3;
 
 public class SusanoAbility extends Ability implements Ability.Cooldown {
 
@@ -17,19 +15,20 @@ public class SusanoAbility extends Ability implements Ability.Cooldown {
         return ActivationType.INSTANT;
     }
 
-    // Spécifie la combinaisons à effectuer pour activer le jutsu.
     @Override
     public long defaultCombo() {
-        return 3322; // Par exemple, à moduler selon votre système.
+        return 3322L;
     }
 
-    // Vérifie le coût en chakra – ici 80 points.
     @Override
     public boolean handleCost(Player player, INinjaData ninjaData, int chargeAmount) {
         if (ninjaData.getChakra() < 80) {
             player.displayClientMessage(
-                    Component.translatable("jutsu.fail.notenoughchakra",
-                            Component.translatable(this.getTranslationKey(ninjaData)).withStyle(ChatFormatting.YELLOW)),
+                    Component.translatable(
+                            "jutsu.fail.notenoughchakra",
+                            Component.translatable(this.getTranslationKey(ninjaData))
+                                    .withStyle(ChatFormatting.YELLOW)
+                    ),
                     true
             );
             return false;
@@ -40,25 +39,32 @@ public class SusanoAbility extends Ability implements Ability.Cooldown {
 
     @Override
     public void performServer(Player player, INinjaData ninjaData, int ticksActive) {
-        // Durée d'invocation du Susano : 1 minute = 60 * 20 ticks = 1200 ticks.
-        final int duration = 60 * 20;
+        System.out.println("[SusanoAbility] --> performServer START");
+        System.out.println("  player = " + player.getName().getString()
+                + " / chakra = " + ninjaData.getChakra());
 
-        // Crée l'entité Susano, qui sera notre exosquelette autour du joueur.
+        // instanciation
         SusanoEntity susano = new SusanoEntity(NarutoEntities.SUSANO.get(), player.level());
+        System.out.println("[SusanoAbility] new SusanoEntity created: " + susano);
+
         susano.setOwner(player);
-        // Positionne-le exactement au même endroit que le joueur.
+        System.out.println("[SusanoAbility] owner set on Susano");
+
         susano.setPos(player.getX(), player.getY(), player.getZ());
+        System.out.println("[SusanoAbility] position set to " + player.blockPosition());
+
         player.level().addFreshEntity(susano);
+        System.out.println("[SusanoAbility] addFreshEntity CALLED");
 
-        // (Optionnel) On peut ajouter ici des effets visuels ou sonores d'invocation.
-
-        // Planifie la suppression du Susano après la durée (1 min)
-        ninjaData.scheduleDelayedTickEvent((delayedPlayer) -> {
+        System.out.println("[SusanoAbility] scheduling discard in 1200 ticks");
+        ninjaData.scheduleDelayedTickEvent(delayed -> {
+            System.out.println("[SusanoAbility] discard callback fired");
             susano.discard();
-        }, duration);
+        }, 60 * 20);
+
+        System.out.println("[SusanoAbility] --> performServer END");
     }
 
-    // Cooldown de l'ability – ici 1 minute (1200 ticks) ; adaptez-le si besoin.
     @Override
     public int getCooldown() {
         return 60 * 20;

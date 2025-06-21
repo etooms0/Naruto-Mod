@@ -1,0 +1,105 @@
+{
+  "format_version": "1.8.0",
+  "geckolib_format_version": 2,
+  "animations": {
+    "idle": {
+      "loop": true,
+      "animation_length": 0.3333,
+      "bones": {
+        "cage_toracique": {
+          "rotation": {
+            "0.0":   { "vector": [0,   0,   0] },
+            "0.1667":{ "vector": [0,   0,  -2.5] },
+            "0.2083":{ "vector": [0,   0,   0] },
+            "0.2917":{ "vector": [0,   0,   0] },
+            "0.3333":{ "vector": [0,   0,   0] }
+          }
+        },
+        "tete_squelette": {
+          "rotation": {
+            "0.0":   { "vector": [0,    0,   0] },
+            "0.1667":{ "vector": [0,    0,   2.5] },
+            "0.25":  { "vector": [0,    0,   0] }
+          },
+          "position": {
+            "0.0":   { "vector": [0,   0, 0] },
+            "0.0417":{ "vector": [0,  -1, 0] },
+            "0.125": { "vector": [0,   0, 0] },
+            "0.25":  { "vector": [0,  -1, 0] }
+          }
+        },
+        "bras_droit": {
+          "rotation": {
+            "0.0":   { "vector": [0,    0,   0] },
+            "0.125": { "vector": [2.5,  0,   0] },
+            "0.2917":{ "vector": [-1.47,-0.16,-4.19] }
+          }
+        },
+        "bras2": {
+          "rotation": {
+            "0.0833":{ "vector": [0,    0,   0] },
+            "0.2083":{ "vector": [2.5,  0,   0] },
+            "0.3333":{ "vector": [-2.5, 0,   0] }
+          }
+        }
+      }
+    },
+
+    "fraper": {
+      "loop": true,
+      "animation_length": 0.25,
+      "bones": {
+        "bras2": {
+          "rotation": {
+            "0.0":   { "vector": [0,   0,   0] },
+            "0.0833":{ "vector": [0,   0,  45] },
+            "0.125": { "vector": [97.5,0,  45] },
+            "0.2083":{ "vector": [-30, 0,  45] }
+          }
+        }
+      }
+    },
+
+    "mort": {
+      "animation_length": 0.25,
+      "bones": {
+        "exoskelette": {
+          "rotation": {
+            "0.0":  { "vector": [0,     0,   0] },
+            "0.25": { "vector": [-92.5, 0,   0] }
+          }
+        },
+        "bras_droit": {
+          "rotation": {
+            "0.0":  { "vector": [0,    0,   0] },
+            "0.25": { "vector": [0,   -60,  0] }
+          }
+        },
+        "bras2": {
+          "rotation": {
+            "0.0":  { "vector": [0,    0,   0] },
+            "0.25": { "vector": [0,    72.5,0] }
+          }
+        }
+      }
+    },
+
+    "tete_flippante": {
+      "loop": true,
+      "animation_length": 0.5833,
+      "bones": {
+        "tete_squelette": {
+          "rotation": {
+            "0.0":   { "vector": [0,     0,    0] },
+            "0.0833":{ "vector": [0,    32.5,  0] },
+            "0.1667":{ "vector": [0,    80,    0] },
+            "0.25":  { "vector": [0,   132.5,  0] },
+            "0.3333":{ "vector": [0,   205,    0] },
+            "0.4167":{ "vector": [0,   295,    0] },
+            "0.5":   { "vector": [0,   357.5,  0] }
+          }
+        }
+      }
+    }
+  }
+}

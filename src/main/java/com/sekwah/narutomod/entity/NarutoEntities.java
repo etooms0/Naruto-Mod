@@ -56,7 +56,7 @@ public class NarutoEntities {
                     .sized(1.5F, 3.5F) // adjust the size as needed
                     .clientTrackingRange(10)
                     .setTrackingRange(10)
-                    .noSummon() // optional: prevents natural spawning
+                    //.noSummon() // optional: prevents natural spawning
                     .fireImmune()); // optional: if desired
 
 
@@ -81,8 +81,10 @@ public class NarutoEntities {
 
     @SubscribeEvent
     public static void entityAttributeCreation(EntityAttributeCreationEvent event) {
+        event.put(SUSANO.get(), SusanoEntity.createAttributes().build());
         event.put(SHADOW_CLONE.get(), ShadowCloneEntity.createAttributes().build());
         event.put(SUBSTITUTION_LOG.get(), SubstitutionLogEntity.createAttributes().build());
     }
+
 
 }
