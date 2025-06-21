@@ -43,6 +43,7 @@ public class SusanoAbility extends Ability implements Ability.Cooldown {
 
         SusanoEntity susano = new SusanoEntity(NarutoEntities.SUSANO.get(), player.level());
         susano.setOwner(player);
+        susano.startRiding(player, true);
 
         // 1) Position
         double x = player.getX();

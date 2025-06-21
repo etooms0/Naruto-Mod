@@ -65,6 +65,22 @@ public class SusanoEntity extends Mob implements GeoEntity {
     }
 
     @Override
+    public boolean shouldRiderSit() {
+        return false; // Ne modifie pas la pose du joueur
+    }
+
+    @Override
+    public boolean isPassenger() {
+        return true;
+    }
+
+    @Override
+    public boolean canRiderInteract() {
+        return false;
+    }
+
+
+    @Override
     public void tick() {
         super.tick();
 
@@ -94,6 +110,12 @@ public class SusanoEntity extends Mob implements GeoEntity {
             discard();
         }
     }
+
+    @Override
+    public double getMyRidingOffset() {
+        return -1.5D; // ou -2.0D, à ajuster selon la hauteur de ton modèle
+    }
+
 
     @Override
     public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
