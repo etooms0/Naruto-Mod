@@ -71,7 +71,6 @@ public class ShadowCloneAbility extends Ability implements Ability.Cooldown {
         GameProfile originalProfile = ((ServerPlayer) player).getGameProfile();
         GameProfile fullProfile = new GameProfile(player.getUUID(), player.getGameProfile().getName());
 
-
         // ✅ Copier les propriétés (notamment "textures")
         if (!originalProfile.getProperties().isEmpty()) {
             fullProfile.getProperties().putAll(originalProfile.getProperties());
@@ -81,6 +80,12 @@ public class ShadowCloneAbility extends Ability implements Ability.Cooldown {
         ShadowCloneEntity clone = new ShadowCloneEntity(NarutoEntities.SHADOW_CLONE.get(), player.level(), fullProfile);
         clone.setPos(pos.add(0, 1, 0));
         clone.setOwner(player);
+
+        // ⚔️ Hérite la cible du joueur si elle existe
+        if (player.getLastHurtMob() != null) {
+            clone.setTarget(player.getLastHurtMob());
+            System.out.println("[DEBUG] - Cible transmise au clone : " + player.getLastHurtMob().getName().getString());
+        }
 
         // ✅ Ajoute le clone dans le monde
         player.level().addFreshEntity(clone);
@@ -92,12 +97,9 @@ public class ShadowCloneAbility extends Ability implements Ability.Cooldown {
                     new SyncCloneProfilePacket(clone.getId(), fullProfile)
             );
         }
-        System.out.println("[DEBUG] - Vérification profil clone :");
-        System.out.println("  • Owner: " + (clone.getOwner() != null ? clone.getOwner().getName().getString() : "null"));
-        System.out.println("  • GameProfile name: " + (clone.getGameProfile() != null ? clone.getGameProfile().getName() : "null"));
-        System.out.println("  • Textures size: " + (clone.getGameProfile() != null ? clone.getGameProfile().getProperties().get("textures").size() : "0"));
 
     }
+
 
 
 

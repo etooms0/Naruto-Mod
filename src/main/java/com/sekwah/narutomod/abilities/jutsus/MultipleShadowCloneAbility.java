@@ -64,7 +64,6 @@ public class MultipleShadowCloneAbility extends Ability implements Ability.Coold
         GameProfile originalProfile = ((ServerPlayer) player).getGameProfile();
         GameProfile fullProfile = new GameProfile(player.getUUID(), player.getGameProfile().getName());
 
-
         // ✅ Copier les propriétés (notamment "textures")
         if (!originalProfile.getProperties().isEmpty()) {
             fullProfile.getProperties().putAll(originalProfile.getProperties());
@@ -74,6 +73,12 @@ public class MultipleShadowCloneAbility extends Ability implements Ability.Coold
         ShadowCloneEntity clone = new ShadowCloneEntity(NarutoEntities.SHADOW_CLONE.get(), player.level(), fullProfile);
         clone.setPos(pos.add(0, 1, 0));
         clone.setOwner(player);
+
+        // ⚔️ Hérite la cible du joueur si elle existe
+        if (player.getLastHurtMob() != null) {
+            clone.setTarget(player.getLastHurtMob());
+            System.out.println("[DEBUG] - Cible transmise au clone : " + player.getLastHurtMob().getName().getString());
+        }
 
         // ✅ Ajoute le clone dans le monde
         player.level().addFreshEntity(clone);
@@ -85,7 +90,9 @@ public class MultipleShadowCloneAbility extends Ability implements Ability.Coold
                     new SyncCloneProfilePacket(clone.getId(), fullProfile)
             );
         }
+
     }
+
 
 
 
