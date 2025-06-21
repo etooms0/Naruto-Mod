@@ -2,6 +2,7 @@ package com.sekwah.narutomod.entity;
 
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
+import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.MobType;
@@ -30,6 +31,7 @@ public class SusanoEntity extends Mob implements GeoEntity {
         System.out.println("[SusanoEntity] <ctor> on level " + level.dimension().location());
         this.setNoGravity(true);
         this.setNoAi(true);
+        this.noPhysics = true;
         this.setInvulnerable(true);
     }
 
@@ -41,6 +43,30 @@ public class SusanoEntity extends Mob implements GeoEntity {
     @Nullable
     public Player getOwner() {
         return this.owner;
+    }
+
+    @Override
+    public boolean hurt(DamageSource source, float amount) {
+        // Toujours refuser tout dommage
+        return false;
+    }
+
+    @Override
+    public boolean canBeCollidedWith() {
+        // Désactive toute collision physique
+        return false;
+    }
+
+    @Override
+    public boolean isPickable() {
+        // IGNORE Susano lors du ray-trace (clic et attaque)
+        return false;
+    }
+
+    @Override
+    public boolean isInvulnerableTo(DamageSource source) {
+        // Toujours invulnérable
+        return true;
     }
 
     @Override
