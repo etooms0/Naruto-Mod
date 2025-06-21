@@ -31,18 +31,26 @@ import java.util.List;
 public class ShadowCloneEntity extends TamableAnimal {
 
     private int aliveTicks = 5 * 60 * 20;
-    private final GameProfile gameProfile;
+    private GameProfile gameProfile;
     private Player owner;
 
     public ShadowCloneEntity(EntityType<? extends ShadowCloneEntity> type, Level level) {
         super(type, level);
-        this.gameProfile = new GameProfile(null, "Steve"); // Évite l'erreur en initialisant gameProfile
+        this.gameProfile = new GameProfile(null, "Steve");
     }
 
     public ShadowCloneEntity(EntityType<? extends ShadowCloneEntity> type, Level level, GameProfile profile) {
         super(type, level);
         this.gameProfile = profile;
     }
+
+    public void setGameProfile(GameProfile profile) {
+        this.gameProfile.getProperties().clear();
+        this.gameProfile.getProperties().putAll(profile.getProperties());
+        // Si besoin, forcer une mise à jour de la texture / rendu ici
+    }
+
+
 
     @Override
     public boolean doHurtTarget(Entity target) {

@@ -63,10 +63,13 @@ public class ShadowCloneRenderer extends LivingEntityRenderer<ShadowCloneEntity,
     @Override
     public ResourceLocation getTextureLocation(ShadowCloneEntity entity) {
         if (entity.getGameProfile() != null) {
-            return Minecraft.getInstance().getSkinManager().getInsecureSkinLocation(entity.getGameProfile());
+            ResourceLocation skin = Minecraft.getInstance().getSkinManager().getInsecureSkinLocation(entity.getGameProfile());
+            System.out.println("[DEBUG] Skin ResourceLocation: " + skin);
+            return skin;
         }
         return new ResourceLocation("minecraft", "textures/entity/player/slim/steve.png");
     }
+
 
     @Override
     protected void scale(ShadowCloneEntity entity, PoseStack poseStack, float partialTicks) {

@@ -9,6 +9,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraftforge.fml.ModList;
 import net.minecraftforge.network.NetworkDirection;
+import com.sekwah.narutomod.network.s2c.SyncCloneProfilePacket;
 import net.minecraftforge.network.NetworkRegistry;
 import net.minecraftforge.network.PacketDistributor;
 import net.minecraftforge.network.simple.SimpleChannel;
@@ -46,6 +47,10 @@ public class PacketHandler {
     public static void init() {
         // Server to client packs
         NARUTO_CHANNEL.registerMessage(getPacketID(), ClientTestPacket.class, ClientTestPacket::encode, ClientTestPacket::decode, ClientTestPacket.Handler::handle);
+
+
+        //clone skin texture
+        NARUTO_CHANNEL.registerMessage(getPacketID(), SyncCloneProfilePacket.class, SyncCloneProfilePacket::toBytes, SyncCloneProfilePacket::new, SyncCloneProfilePacket::handle);
 
         // Client to server packets
         NARUTO_CHANNEL.registerMessage(getPacketID(),

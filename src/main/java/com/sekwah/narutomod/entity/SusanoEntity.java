@@ -106,7 +106,6 @@ public class SusanoEntity extends Mob implements GeoEntity {
             this.yBodyRot = yaw;
             this.yHeadRot = owner.yHeadRot;
         } else {
-            System.out.println("[SusanoEntity] owner invalid → discard()");
             discard();
         }
     }
