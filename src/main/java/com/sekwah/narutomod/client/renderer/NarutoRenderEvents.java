@@ -18,6 +18,7 @@ import net.minecraft.client.renderer.RenderType;
 import net.minecraft.server.packs.resources.ResourceManagerReloadListener;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.api.distmarker.Dist;
+import com.sekwah.narutomod.client.renderer.entity.DeidaraRenderer;
 import net.minecraftforge.client.event.EntityRenderersEvent;
 import net.minecraftforge.client.event.RegisterClientReloadListenersEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -44,7 +45,8 @@ public class NarutoRenderEvents {
         event.registerEntityRenderer(NarutoEntities.WATER_BULLET_JUTSU.get(), WaterBulletJutsuRenderer::new);
         event.registerEntityRenderer(NarutoEntities.SHADOW_CLONE.get(), ShadowCloneRenderer::new);
         event.registerEntityRenderer(NarutoEntities.SUSANO.get(), SusanoRenderer::new);
-        System.out.println("[RenderEvents] SusanoRenderer enregistré");
+        event.registerEntityRenderer(NarutoEntities.DEIDARA.get(), DeidaraRenderer::new);
+        event.registerEntityRenderer(NarutoEntities.DEIDARA_CLONE.get(), DeidaraRenderer::new);
 
         event.registerEntityRenderer(NarutoEntities.SUBSTITUTION_LOG.get(), SubstitutionLogRenderer::new);
 

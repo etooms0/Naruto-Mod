@@ -60,6 +60,22 @@ public class NarutoEntities {
                     .fireImmune()); // optional: if desired
 
 
+    public static final RegistryObject<EntityType<DeidaraEntity>> DEIDARA = register("deidara",
+            EntityType.Builder.<DeidaraEntity>of(DeidaraEntity::new, MobCategory.MONSTER)
+                    .sized(0.6F, 1.8F) // taille humanoïde
+                    .clientTrackingRange(10)
+                    .setTrackingRange(32)
+                    .fireImmune());
+
+    public static final RegistryObject<EntityType<com.sekwah.narutomod.entity.DeidaraCloneEntity>> DEIDARA_CLONE =
+            register("deidara_clone",
+                    EntityType.Builder.<com.sekwah.narutomod.entity.DeidaraCloneEntity>of(DeidaraCloneEntity::new, MobCategory.MONSTER)
+                            .sized(0.6F, 1.8F) // même taille que l'original ou adaptée selon ton besoin
+                            .clientTrackingRange(10)
+                            .setTrackingRange(32)
+                            .fireImmune());
+
+
 
     public static final RegistryObject<EntityType<FireballJutsuEntity>> FIREBALL_JUTSU = register("fireball_jutsu",
             EntityType.Builder.<FireballJutsuEntity>of(FireballJutsuEntity::new, MobCategory.MISC).sized(1.5F, 1.5F).clientTrackingRange(4).updateInterval(10));
@@ -84,7 +100,9 @@ public class NarutoEntities {
         event.put(SUSANO.get(), SusanoEntity.createAttributes().build());
         event.put(SHADOW_CLONE.get(), ShadowCloneEntity.createAttributes().build());
         event.put(SUBSTITUTION_LOG.get(), SubstitutionLogEntity.createAttributes().build());
-    }
+        event.put(NarutoEntities.DEIDARA.get(), DeidaraEntity.createAttributes().build());
+        event.put(NarutoEntities.DEIDARA_CLONE.get(), DeidaraCloneEntity.createAttributes().build());
+}
 
 
 }
