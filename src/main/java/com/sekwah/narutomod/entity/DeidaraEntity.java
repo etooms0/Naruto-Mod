@@ -2,6 +2,7 @@ package com.sekwah.narutomod.entity;
 
 import com.sekwah.narutomod.item.NarutoItems;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
@@ -112,6 +113,12 @@ public class DeidaraEntity extends Monster {
         return result;
     }
 
+    @Override
+    public boolean isInWater() {
+        // Il ne coule pas dans l’eau
+        return false;
+    }
+
 
     @Override
     public void die(DamageSource cause) {
@@ -190,11 +197,27 @@ public class DeidaraEntity extends Monster {
     public void tick() {
         super.tick();
 
-        // Met à jour la barre de boss avec la vie actuelle
         if (!this.level().isClientSide()) {
             bossBar.setProgress(this.getHealth() / this.getMaxHealth());
         }
+
+        // Marchez sur l'eau
+        BlockPos belowFeet = this.blockPosition().below();
+        if (this.level().getBlockState(belowFeet).getBlock() == Blocks.WATER && this.getDeltaMovement().y <= 0) {
+            // Ne pas descendre dans l'eau, reste juste au-dessus
+            this.setOnGround(true);
+            this.setDeltaMovement(this.getDeltaMovement().x, 0.0D, this.getDeltaMovement().z);
+            this.setPos(this.getX(), belowFeet.getY() + 1.0, this.getZ());
+            this.level().addParticle(ParticleTypes.SPLASH, this.getX(), this.getY(), this.getZ(), 0, 0, 0);
+
+        }
     }
+
+    @Override
+    public boolean canStandOnFluid(net.minecraft.world.level.material.FluidState fluidState) {
+        return fluidState.is(net.minecraft.tags.FluidTags.WATER);
+    }
+
 
     // Appliquer la barre de boss aux joueurs proches
     @Override
