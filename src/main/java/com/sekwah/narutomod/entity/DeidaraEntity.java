@@ -31,6 +31,7 @@ import net.minecraft.server.level.ServerBossEvent;
 import net.minecraft.world.level.ServerLevelAccessor;
 import net.minecraft.world.level.block.Blocks;
 
+import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraftforge.network.NetworkHooks;
 
 import javax.annotation.Nullable;
@@ -99,14 +100,31 @@ public class DeidaraEntity extends Monster {
         if (result && !this.level().isClientSide() && !(this instanceof DeidaraCloneEntity)) {
             ServerLevel serverLevel = (ServerLevel) this.level();
 
-            // Calcule combien de clones Deidara aurait dû générer selon sa perte de vie
             float maxHealth = this.getMaxHealth();
             float currentHealth = this.getHealth();
-            int expectedClones = 4 - (int)(currentHealth / (maxHealth / 5)); // 1 clone tous les 1/5e
+            int expectedClones = 4 - (int)(currentHealth / (maxHealth / 5));
 
             while (clonesSpawned < expectedClones) {
                 spawnClone(serverLevel);
                 clonesSpawned++;
+
+                // === Téléportation aléatoire à chaque spawn ===
+                double radius = 15.0;
+                for (int attempts = 0; attempts < 16; attempts++) {
+                    double offsetX = (this.random.nextDouble() - 0.5) * 2 * radius;
+                    double offsetZ = (this.random.nextDouble() - 0.5) * 2 * radius;
+                    double newX = this.getX() + offsetX;
+                    double newZ = this.getZ() + offsetZ;
+
+                    BlockPos tryPos = new BlockPos((int)newX, (int)this.getY(), (int)newZ);
+                    BlockPos safePos = serverLevel.getHeightmapPos(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, tryPos);
+
+                    // Vérifie que le bloc est libre et qu’il y a de la place au-dessus
+                    if (serverLevel.isEmptyBlock(safePos) && serverLevel.isEmptyBlock(safePos.above())) {
+                        this.teleportTo(newX, safePos.getY(), newZ);
+                        break;
+                    }
+                }
             }
         }
 
@@ -180,7 +198,7 @@ public class DeidaraEntity extends Monster {
         return Monster.createMonsterAttributes()
                 .add(Attributes.MAX_HEALTH, 300.0D)
                 .add(Attributes.ATTACK_DAMAGE, 10.0D)
-                .add(Attributes.MOVEMENT_SPEED, 0.25D)
+                .add(Attributes.MOVEMENT_SPEED, 0.50D)
                 .add(Attributes.FOLLOW_RANGE, 32.0D);
     }
 
