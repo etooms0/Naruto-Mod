@@ -10,6 +10,7 @@ import net.minecraft.network.protocol.game.ClientboundSetEquipmentPacket;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.*;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.damagesource.DamageSource;
@@ -55,11 +56,16 @@ public class ShadowCloneEntity extends TamableAnimal {
     @Override
     public boolean doHurtTarget(Entity target) {
         if (target instanceof LivingEntity victim) {
-            float damage = (float) this.getAttributeValue(Attributes.ATTACK_DAMAGE); // Récupère la force du clone
-            return victim.hurt(this.damageSources().mobAttack(this), damage); // Inflige des dégâts sans erreur
+            float damage = (float) this.getAttributeValue(Attributes.ATTACK_DAMAGE);
+
+            // ✅ Déclenche l'animation du bras
+            this.swing(InteractionHand.MAIN_HAND, true);
+
+            return victim.hurt(this.damageSources().mobAttack(this), damage);
         }
         return false;
     }
+
 
     public void setOwner(Player player) {
         this.owner = player;
