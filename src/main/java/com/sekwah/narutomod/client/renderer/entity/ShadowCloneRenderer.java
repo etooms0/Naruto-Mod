@@ -27,6 +27,8 @@ public class ShadowCloneRenderer extends LivingEntityRenderer<ShadowCloneEntity,
                 new HumanoidArmorModel<>(manager.bakeLayer(ModelLayers.PLAYER_INNER_ARMOR)),
                 new HumanoidArmorModel<>(manager.bakeLayer(ModelLayers.PLAYER_OUTER_ARMOR)),
                 manager.getModelManager()));
+        this.addLayer(new net.minecraft.client.renderer.entity.layers.ItemInHandLayer<>(this, manager.getItemInHandRenderer()));
+
     }
 
     @Override
@@ -36,29 +38,8 @@ public class ShadowCloneRenderer extends LivingEntityRenderer<ShadowCloneEntity,
 
         System.out.println("[DEBUG] - Rendu du clone : " + entity.getName().getString());
         System.out.println("[DEBUG] - Affichage des objets en main...");
-        renderHeldItem(entity, poseStack, buffer, packedLight);
     }
 
-    private void renderHeldItem(ShadowCloneEntity entity, PoseStack poseStack, MultiBufferSource buffer, int packedLight) {
-        ItemStack mainHandItem = entity.getItemBySlot(EquipmentSlot.MAINHAND);
-        ItemStack offHandItem = entity.getItemBySlot(EquipmentSlot.OFFHAND);
-        ItemRenderer itemRenderer = Minecraft.getInstance().getItemRenderer();
-
-        System.out.println("[DEBUG] - Rendu des objets du clone : " + entity.getName().getString());
-        System.out.println("[DEBUG] - Main principale → " + (mainHandItem.isEmpty() ? "Aucun" : mainHandItem.getDisplayName().getString()));
-        System.out.println("[DEBUG] - Main secondaire → " + (offHandItem.isEmpty() ? "Aucun" : offHandItem.getDisplayName().getString()));
-
-        if (!mainHandItem.isEmpty()) {
-            System.out.println("[DEBUG] - Rendu en main principale");
-            itemRenderer.renderStatic(mainHandItem, ItemDisplayContext.THIRD_PERSON_RIGHT_HAND,
-                    packedLight, OverlayTexture.NO_OVERLAY, poseStack, buffer, entity.level(), 0);
-        }
-        if (!offHandItem.isEmpty()) {
-            System.out.println("[DEBUG] - Rendu en main secondaire");
-            itemRenderer.renderStatic(offHandItem, ItemDisplayContext.THIRD_PERSON_LEFT_HAND,
-                    packedLight, OverlayTexture.NO_OVERLAY, poseStack, buffer, entity.level(), 0);
-        }
-    }
 
     @Override
     public ResourceLocation getTextureLocation(ShadowCloneEntity entity) {
