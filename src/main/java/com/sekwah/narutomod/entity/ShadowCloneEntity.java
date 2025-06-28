@@ -3,6 +3,7 @@ package com.sekwah.narutomod.entity;
 import com.mojang.datafixers.util.Pair;
 import com.mojang.authlib.GameProfile;
 import com.sekwah.narutomod.sounds.NarutoSounds;
+import net.minecraft.core.BlockPos;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.protocol.game.ClientboundAddEntityPacket;
@@ -49,6 +50,11 @@ public class ShadowCloneEntity extends TamableAnimal {
         this.gameProfile.getProperties().clear();
         this.gameProfile.getProperties().putAll(profile.getProperties());
         // Si besoin, forcer une mise à jour de la texture / rendu ici
+    }
+
+    @Override
+    public boolean canStandOnFluid(net.minecraft.world.level.material.FluidState fluidState) {
+        return fluidState.is(net.minecraft.tags.FluidTags.WATER);
     }
 
 
@@ -165,6 +171,14 @@ public class ShadowCloneEntity extends TamableAnimal {
         if (this.getTarget() instanceof ShadowCloneEntity) {
             this.setTarget(null);
             this.setAggressive(false);
+        }
+
+        BlockPos belowFeet = this.blockPosition().below();
+        if (this.level().getBlockState(belowFeet).getBlock() == net.minecraft.world.level.block.Blocks.WATER && this.getDeltaMovement().y <= 0) {
+            this.setOnGround(true);
+            this.setDeltaMovement(this.getDeltaMovement().x, 0.0D, this.getDeltaMovement().z);
+            this.setPos(this.getX(), belowFeet.getY() + 1.0, this.getZ());
+            this.level().addParticle(net.minecraft.core.particles.ParticleTypes.SPLASH, this.getX(), this.getY(), this.getZ(), 0, 0, 0);
         }
 
         this.setSprinting(this.shouldSprint());
