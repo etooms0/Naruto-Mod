@@ -17,8 +17,12 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.ai.goal.FollowOwnerGoal;
 import net.minecraft.world.entity.ai.goal.MeleeAttackGoal;
+import net.minecraft.world.entity.ai.goal.RangedBowAttackGoal;
 import net.minecraft.world.entity.ai.goal.target.OwnerHurtByTargetGoal;
 import net.minecraft.world.entity.ai.goal.target.OwnerHurtTargetGoal;
+import net.minecraft.world.entity.monster.RangedAttackMob;
+import net.minecraft.world.entity.projectile.AbstractArrow;
+import net.minecraft.world.item.BowItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
@@ -30,7 +34,7 @@ import net.minecraftforge.network.NetworkHooks;
 import java.util.Collections;
 import java.util.List;
 
-public class ShadowCloneEntity extends TamableAnimal {
+public class ShadowCloneEntity extends TamableAnimal implements RangedAttackMob {
 
     private int aliveTicks = 5 * 60 * 20;
     private GameProfile gameProfile;
@@ -45,6 +49,12 @@ public class ShadowCloneEntity extends TamableAnimal {
         super(type, level);
         this.gameProfile = profile;
     }
+
+    public boolean hasBowEquipped() {
+        ItemStack item = this.getItemBySlot(EquipmentSlot.MAINHAND);
+        return item.getItem() instanceof BowItem;
+    }
+
 
     public void setGameProfile(GameProfile profile) {
         this.gameProfile.getProperties().clear();
@@ -78,8 +88,31 @@ public class ShadowCloneEntity extends TamableAnimal {
         this.setCustomName(player.getName());
         this.setCustomNameVisible(true);
         System.out.println("[DEBUG] - Clone créé avec pour owner : " + player.getName().getString());
-        copyEquipmentFromOwner(); // Copie l'armure et l'objet en main du joueur
+        copyEquipmentFromOwner();
+
+        this.goalSelector.getAvailableGoals().clear();
+        this.targetSelector.getAvailableGoals().clear();
+
+        registerGoals(); // va gérer le comportement selon l'arme du joueur
     }
+
+    @Override
+    public void performRangedAttack(LivingEntity target, float distanceFactor) {
+        ItemStack bow = this.getItemBySlot(EquipmentSlot.MAINHAND);
+        if (bow.getItem() instanceof BowItem) {
+            AbstractArrow arrow = new net.minecraft.world.entity.projectile.Arrow(this.level(), this);
+            double dx = target.getX() - this.getX();
+            double dy = target.getY(0.333) - arrow.getY();
+            double dz = target.getZ() - this.getZ();
+            double dist = Math.sqrt(dx * dx + dz * dz);
+            arrow.shoot(dx, dy + dist * 0.2, dz, 1.6F, 14 - this.level().getDifficulty().getId() * 4);
+            arrow.setOwner(this);
+
+            this.level().addFreshEntity(arrow);
+            this.playSound(net.minecraft.sounds.SoundEvents.ARROW_SHOOT, 1.0F, 1.0F);
+        }
+    }
+
 
     @Override
     public HumanoidArm getMainArm() {
@@ -131,6 +164,11 @@ public class ShadowCloneEntity extends TamableAnimal {
         this.targetSelector.addGoal(1, new OwnerHurtByTargetGoal(this)); // Défend son propriétaire en attaquant ceux qui l'agressent
         this.targetSelector.addGoal(2, new OwnerHurtTargetGoal(this)); // Attaque automatiquement les cibles du propriétaire
         this.goalSelector.addGoal(3, new MeleeAttackGoal(this, 1.2D, true)); // Frappe l'ennemi avec une attaque directe
+        if (hasBowEquipped()) {
+            this.goalSelector.addGoal(3, new RangedBowAttackGoal<>(this, 1.0D, 20, 25.0F));
+        } else {
+            this.goalSelector.addGoal(3, new MeleeAttackGoal(this, 1.2D, true));
+        }
     }
 
     public boolean shouldSprint() {

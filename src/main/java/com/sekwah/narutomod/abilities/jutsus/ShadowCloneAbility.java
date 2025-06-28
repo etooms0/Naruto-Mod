@@ -20,6 +20,7 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.network.PacketDistributor;
 
@@ -51,9 +52,22 @@ public class ShadowCloneAbility extends Ability implements Ability.Cooldown {
         ninjaData.scheduleDelayedTickEvent((delayedPlayer) -> {
 
             System.out.println("[+] - Shadow Cone Jutsu launched !");
-            for(int i=0; i<3; i++) {
-                spawnCloneAt(player, player.position(), ninjaData);
+            ItemStack heldItem = player.getMainHandItem();
+            boolean hasBow = heldItem.getItem() instanceof net.minecraft.world.item.BowItem;
+
+            for (int i = 0; i < 3; i++) {
+                Vec3 offsetPos = player.position();
+                if (hasBow) {
+                    double angle = (2 * Math.PI / 3) * i; // répartit les clones en cercle
+                    double radius = 2.5D;
+                    double offsetX = Math.cos(angle) * radius;
+                    double offsetZ = Math.sin(angle) * radius;
+                    offsetPos = offsetPos.add(offsetX, 0, offsetZ);
+                }
+
+                spawnCloneAt(player, offsetPos, ninjaData);
             }
+
             System.out.println("[+] - Fini !");
         }, 10);
     }
