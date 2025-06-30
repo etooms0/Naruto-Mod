@@ -20,6 +20,7 @@ import java.util.Map;
 public class BarrierJutsuAbility extends Ability implements Ability.Cooldown {
 
     private static final Map<BlockPos, Integer> activeCages = new HashMap<>();
+    private static final int radius = 12;
 
     @Override
     public long defaultCombo() {
@@ -50,25 +51,30 @@ public class BarrierJutsuAbility extends Ability implements Ability.Cooldown {
 
     private void createBarrier(ServerPlayer player) {
         Level level = player.level();
-        BlockPos center = player.blockPosition().below(); // 🔥 Abaisse la cage sous le joueur
-        int radiusX = 7, radiusZ = 7, height = 10;
+        BlockPos center = player.blockPosition();
 
-        for (int x = -radiusX; x <= radiusX; x++) {
-            for (int y = 0; y <= height; y++) {
-                for (int z = -radiusZ; z <= radiusZ; z++) {
-                    BlockPos pos = center.offset(x, y, z);
+        for (int x = -radius; x <= radius; x++) {
+            for (int y = -radius; y <= radius; y++) {
+                for (int z = -radius; z <= radius; z++) {
+                    double dist = Math.sqrt(x * x + y * y + z * z);
 
-                    if (y == 0) { // ✅ Sol en bois sous le joueur, pas à son niveau
-                        level.setBlock(pos, Blocks.OAK_PLANKS.defaultBlockState(), 3);
-                    } else if (shouldPlaceBars(center, pos, radiusX, radiusZ)) {
-                        level.setBlock(pos, Blocks.IRON_BARS.defaultBlockState(), 3);
-                    } else if (y == height) {
-                        level.setBlock(pos, Blocks.OAK_LOG.defaultBlockState(), 3);
+                    // on forme une coquille d'une épaisseur de 1 bloc
+                    if (dist <= radius && dist > radius - 1) {
+                        BlockPos pos = center.offset(x, y, z);
+                        level.setBlock(pos, Blocks.PACKED_ICE.defaultBlockState(), 3);
+                    }
+
+                    // on peut aussi mettre un vrai sol plein si tu veux :
+                    if (y == -radius && dist <= radius - 1) {
+                        BlockPos pos = center.offset(x, y, z);
+                        level.setBlock(pos, Blocks.PACKED_ICE.defaultBlockState(), 3);
                     }
                 }
             }
         }
     }
+
+
 
     @SubscribeEvent
     public static void onServerTick(TickEvent.ServerTickEvent event) {
@@ -90,17 +96,33 @@ public class BarrierJutsuAbility extends Ability implements Ability.Cooldown {
     }
 
     private static void removeBarrier(Level level, BlockPos center) {
-        int radiusX = 7, radiusZ = 7, height = 10;
 
-        for (int x = -radiusX; x <= radiusX; x++) {
-            for (int y = -1; y <= height; y++) { // 🔥 Ajoute `-1` pour inclure le sol
-                for (int z = -radiusZ; z <= radiusZ; z++) {
-                    BlockPos pos = center.offset(x, y, z);
-                    level.removeBlock(pos, false);
+        for (int x = -radius; x <= radius; x++) {
+            for (int y = -radius; y <= radius; y++) {
+                for (int z = -radius; z <= radius; z++) {
+                    double dist = Math.sqrt(x * x + y * y + z * z);
+
+                    // Supprimer la coquille
+                    if (dist <= radius && dist > radius - 1) {
+                        BlockPos pos = center.offset(x, y, z);
+                        if (level.getBlockState(pos).is(Blocks.PACKED_ICE)) {
+                            level.removeBlock(pos, false);
+                        }
+                    }
+
+                    // Supprimer le sol (bas de la sphère)
+                    if (y == -radius && dist <= radius - 1) {
+                        BlockPos pos = center.offset(x, y, z);
+                        if (level.getBlockState(pos).is(Blocks.PACKED_ICE)) {
+                            level.removeBlock(pos, false);
+                        }
+                    }
                 }
             }
         }
     }
+
+
 
     private boolean shouldPlaceBars(BlockPos center, BlockPos pos, int radiusX, int radiusZ) {
         return Math.abs(pos.getX() - center.getX()) == radiusX || Math.abs(pos.getZ() - center.getZ()) == radiusZ;

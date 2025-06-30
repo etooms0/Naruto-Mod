@@ -1,6 +1,6 @@
 {
   "parent": "item/generated",
   "textures": {
-    "layer0": "narutomod:items/lonely_march"
+    "layer0": "narutomod:item/lonely_march"
   }
 }

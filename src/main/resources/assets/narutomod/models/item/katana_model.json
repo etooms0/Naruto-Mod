@@ -2,8 +2,8 @@
     "credit": "Made with Blockbench",
     "texture_size": [64, 32],
     "textures": {
-        "0": "narutomod:items/weapons/model/katana",
-        "particle": "narutomod:items/weapons/model/katana"
+        "0": "narutomod:item/weapons/model/katana",
+        "particle": "narutomod:item/weapons/model/katana"
     },
     "elements": [
         {

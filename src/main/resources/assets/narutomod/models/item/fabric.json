@@ -1,6 +1,6 @@
 {
   "parent": "item/generated",
   "textures": {
-    "layer0": "narutomod:items/fabric"
+    "layer0": "narutomod:item/fabric"
   }
 }
