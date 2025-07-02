@@ -8,8 +8,12 @@ import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.MobType;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.projectile.AbstractArrow;
+import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.network.NetworkHooks;
 import software.bernie.geckolib.animatable.GeoEntity;
 import software.bernie.geckolib.core.animation.AnimatableManager;
@@ -84,27 +88,34 @@ public class SusanoEntity extends Mob implements GeoEntity {
     public void tick() {
         super.tick();
 
-        // Ne rien faire côté client
         if (this.level().isClientSide()) {
             return;
         }
 
-        // Serveur only: maintien en position et orientation
         if (owner != null && owner.isAlive()) {
-            // 1) Position
             this.setPos(owner.getX(), owner.getY(), owner.getZ());
-
-            // 2) Regarde où regarde le joueur
-            float yaw   = owner.getYRot();    // rotation gauche/droite
-            float pitch = owner.getXRot();    // rotation haut/bas
-
-            // 3) Appliquer ces rotations
+            float yaw   = owner.getYRot();
+            float pitch = owner.getXRot();
             this.setYRot(yaw);
             this.setXRot(pitch);
-
-            // 4) Assurer que le renderer oriente tout le corps et la tête
             this.yBodyRot = yaw;
             this.yHeadRot = owner.yHeadRot;
+
+            double radius = 2.0D; // zone autour du Susano où on détecte les projectiles
+            AABB detectionBox = this.getBoundingBox().inflate(radius);
+
+            for (Projectile projectile : this.level().getEntitiesOfClass(Projectile.class, detectionBox)) {
+                if (projectile.isAlive() && !projectile.isRemoved()) {
+                    Vec3 projPos = projectile.position();
+                    Vec3 susanoPos = this.position();
+                    Vec3 toProj = projPos.subtract(susanoPos);
+
+                    Vec3 velocity = projectile.getDeltaMovement();
+                    if (velocity.dot(toProj) < 0) { // projectile va vers Susano
+                        projectile.setDeltaMovement(velocity.multiply(-1, -1, -1));
+                    }
+                }
+            }
         } else {
             discard();
         }
