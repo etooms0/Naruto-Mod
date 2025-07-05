@@ -50,6 +50,7 @@ public class NarutoRenderEvents {
         event.registerEntityRenderer(NarutoEntities.ICHIRAKU.get(), IchirakuRenderer::new);
         event.registerEntityRenderer(NarutoEntities.ITACHI.get(),  ItachiRenderer::new);
         event.registerEntityRenderer(NarutoEntities.HIDAN.get(),  HidanRenderer::new);
+        event.registerEntityRenderer(NarutoEntities.PAIN.get(), PainRenderer::new);
 
         event.registerEntityRenderer(NarutoEntities.SUBSTITUTION_LOG.get(), SubstitutionLogRenderer::new);
 

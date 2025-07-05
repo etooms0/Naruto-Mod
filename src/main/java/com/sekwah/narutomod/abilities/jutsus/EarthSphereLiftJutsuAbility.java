@@ -8,6 +8,7 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
@@ -82,6 +83,67 @@ public class EarthSphereLiftJutsuAbility extends Ability implements Ability.Cool
         }
         return null;
     }
+
+    public void performFromEntity(LivingEntity caster, Vec3 targetPos) {
+        Level level = caster.level();
+        Vec3 attractor = targetPos.add(0, 20, 0);
+
+        AABB entityAABB = new AABB(
+                targetPos.x - 15, targetPos.y - 15, targetPos.z - 15,
+                targetPos.x + 15, targetPos.y + 15, targetPos.z + 15
+        );
+
+        for (Entity e : level.getEntitiesOfClass(LivingEntity.class, entityAABB)) {
+            if (e == caster) continue;
+            Vec3 delta = attractor.subtract(e.position());
+            if (delta.length() > 0) {
+                Vec3 velocity = delta.normalize().scale(0.6);
+                e.setDeltaMovement(velocity);
+            }
+        }
+
+        int horizRadius = 7;
+        int verticalRange = 7;
+        BlockPos targetBlockPos = new BlockPos(
+                Mth.floor(targetPos.x),
+                Mth.floor(targetPos.y),
+                Mth.floor(targetPos.z)
+        );
+
+
+        AttractorData data = new AttractorData(level, attractor, targetBlockPos, level.getGameTime(), 20 * 10, caster);
+        RandomSource random = level.getRandom();
+        float spawnChance = 0.3f;
+
+        for (int x = -horizRadius; x <= horizRadius; x++) {
+            for (int z = -horizRadius; z <= horizRadius; z++) {
+                for (int y = -verticalRange / 2; y <= verticalRange / 2; y++) {
+                    BlockPos pos = targetBlockPos.offset(x, y, z);
+                    BlockState state = level.getBlockState(pos);
+                    if (!state.isAir() && state.getBlock() != Blocks.BEDROCK && random.nextFloat() <= spawnChance) {
+                        level.setBlock(pos, Blocks.AIR.defaultBlockState(), 3);
+                        FallingBlockEntity fallingBlock = new FallingBlockEntity(EntityType.FALLING_BLOCK, level);
+                        fallingBlock.setPos(pos.getX() + 0.5, pos.getY(), pos.getZ() + 0.5);
+                        try {
+                            Field blockStateField = FallingBlockEntity.class.getDeclaredField("blockState");
+                            blockStateField.setAccessible(true);
+                            blockStateField.set(fallingBlock, state);
+                        } catch (Exception ex) {
+                            ex.printStackTrace();
+                        }
+                        fallingBlock.setNoGravity(true);
+                        Vec3 center = new Vec3(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5);
+                        fallingBlock.setDeltaMovement(attractor.subtract(center).normalize().scale(0.6));
+                        level.addFreshEntity(fallingBlock);
+                        data.fallingBlocks.add(fallingBlock);
+                    }
+                }
+            }
+        }
+
+        activeAttractors.add(data);
+    }
+
 
     @Override
     public void performServer(Player player, INinjaData ninjaData, int chargeAmount) {
@@ -285,7 +347,7 @@ public class EarthSphereLiftJutsuAbility extends Ability implements Ability.Cool
                 }
 
                 // Explosion sans drop d’items (TNT-style)
-                level.explode(null, expCenter.x, expCenter.y, expCenter.z, 4.0F, true, Level.ExplosionInteraction.TNT);
+                level.explode(null, expCenter.x, expCenter.y, expCenter.z, 6.0F, true, Level.ExplosionInteraction.TNT);
 
                 // Suppression de l’attracteur de la liste active
                 it.remove();

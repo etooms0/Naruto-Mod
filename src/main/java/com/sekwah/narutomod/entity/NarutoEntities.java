@@ -97,6 +97,14 @@ public class NarutoEntities {
                     .fireImmune()
                     .build("hidan"));
 
+    public static final RegistryObject<EntityType<PainEntity>> PAIN = ENTITIES.register("pain",
+            () -> EntityType.Builder.of(PainEntity::new, MobCategory.MONSTER)
+                    .sized(0.6F, 1.8F) // taille humanoïde
+                    .clientTrackingRange(10)
+                    .setTrackingRange(32)
+                    .fireImmune()
+                    .build("pain"));
+
 
 
 
@@ -128,6 +136,7 @@ public class NarutoEntities {
         event.put(NarutoEntities.ICHIRAKU.get(), IchirakuEntity.createAttributes().build());
         event.put(ITACHI.get(), ItachiEntity.createAttributes().build());
         event.put(HIDAN.get(), HidanEntity.createAttributes().build());
+        event.put(PAIN.get(), PainEntity.createAttributes().build());
 }
 
 
