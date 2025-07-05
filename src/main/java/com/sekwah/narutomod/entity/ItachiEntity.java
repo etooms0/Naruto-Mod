@@ -1,5 +1,6 @@
 package com.sekwah.narutomod.entity;
 
+import com.sekwah.narutomod.abilities.jutsus.FireballJutsuAbility;
 import com.sekwah.narutomod.item.NarutoItems;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -30,10 +31,14 @@ import net.minecraftforge.network.NetworkHooks;
 
 import javax.annotation.Nullable;
 
+import static com.sekwah.narutomod.abilities.NarutoAbilities.FIREBALL;
+
 public class ItachiEntity extends Monster {
 
+    private static final FireballJutsuAbility FIREBALL = new FireballJutsuAbility();
     private final ServerBossEvent bossBar = new ServerBossEvent(
             Component.literal("Itachi Uchiha"), BossEvent.BossBarColor.RED, BossEvent.BossBarOverlay.PROGRESS);
+    private int fireballCooldown = 0;
 
     public ItachiEntity(EntityType<? extends ItachiEntity> type, Level level) {
         super(type, level);
@@ -54,15 +59,27 @@ public class ItachiEntity extends Monster {
 
         if (!this.level().isClientSide()) {
             bossBar.setProgress(this.getHealth() / this.getMaxHealth());
-        }
 
-        // Système de Genjutsu : chance de désorienter l'adversaire
-        if (this.getTarget() instanceof Player player && this.random.nextFloat() < 0.01F) {
-            player.addEffect(new net.minecraft.world.effect.MobEffectInstance(
-                    net.minecraft.world.effect.MobEffects.CONFUSION,
-                    100, // durée
-                    1,   // niveau
-                    false, false, true));
+            LivingEntity target = this.getTarget();
+
+            if (target instanceof Player player) {
+
+                // Fireball Jutsu toutes les 5 secondes
+                if (fireballCooldown <= 0 && this.distanceTo(player) < 20) {
+                    FIREBALL.performFromEntity(this);
+                    fireballCooldown = 20*10; // 5 secondes
+                } else {
+                    fireballCooldown--;
+                }
+
+                // Genjutsu : chance de confusion légère
+                if (this.random.nextFloat() < 0.005F) { // plus rare (0.5%)
+                    player.addEffect(new net.minecraft.world.effect.MobEffectInstance(
+                            net.minecraft.world.effect.MobEffects.CONFUSION,
+                            60, 0, // durée 3 sec, niveau 0 (léger)
+                            false, false, true));
+                }
+            }
         }
     }
 

@@ -30,20 +30,32 @@ public class FireballJutsuRenderer extends EntityRenderer<FireballJutsuEntity> {
    public void render(FireballJutsuEntity fireballJutsuEntity, float p_114486_, float partial, PoseStack poseStack, MultiBufferSource multiBufferSource, int p_114490_) {
       VertexConsumer vertexconsumer = multiBufferSource.getBuffer(RENDER_TYPE);
       poseStack.pushPose();
-      poseStack.translate(0,fireballJutsuEntity.getBbHeight() / 2f,0);
+      poseStack.translate(0, fireballJutsuEntity.getBbHeight() / 2f, 0);
+
       float time = (fireballJutsuEntity.time + partial) * 10.0F;
       float scaleTime = FireballJutsuEntity.GROW_TIME * 10;
-      if(time < scaleTime) {
-         float scale = FireballJutsuEntity.INITIAL_SCALE
-                 + (FireballJutsuEntity.GROW_SCALE - (FireballJutsuEntity.GROW_SCALE * ((scaleTime - time) / scaleTime)));
-         poseStack.scale(scale, scale, scale);
+
+      float scale;
+      if (time < scaleTime) {
+         scale = FireballJutsuEntity.INITIAL_SCALE +
+                 (FireballJutsuEntity.GROW_SCALE - (FireballJutsuEntity.GROW_SCALE * ((scaleTime - time) / scaleTime)));
+      } else {
+         scale = FireballJutsuEntity.GROW_SCALE;
       }
+
+      // Si Itachi est le lanceur : multiplier la taille
+      if (fireballJutsuEntity.getOwner() instanceof com.sekwah.narutomod.entity.ItachiEntity) {
+         scale *= 3f;
+      }
+
+      poseStack.scale(scale, scale, scale);
       poseStack.mulPose(Axis.ZP.rotationDegrees(time * 1.5f));
       poseStack.mulPose(Axis.YP.rotationDegrees(time * 1.5f));
       this.model.renderToBuffer(poseStack, vertexconsumer, p_114490_, OverlayTexture.NO_OVERLAY, 1.0F, 1.0F, 1.0F, 1.0F);
       poseStack.popPose();
       super.render(fireballJutsuEntity, p_114486_, partial, poseStack, multiBufferSource, p_114490_);
    }
+
 
    @Override
    protected int getBlockLightLevel(FireballJutsuEntity p_114087_, BlockPos p_114088_) {

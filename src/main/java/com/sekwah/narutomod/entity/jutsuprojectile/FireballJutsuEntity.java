@@ -54,10 +54,18 @@ public class FireballJutsuEntity extends AbstractHurtingProjectile {
         this.setRot(player.getYRot(), player.getXRot());
     }
 
-    public EntityDimensions getDimensions(Pose p_19721_) {
-        return EntityDimensions.scalable(ENTITY_SIZE, ENTITY_SIZE)
-                .scale(Math.min(INITIAL_SCALE + (GROW_SCALE - (GROW_SCALE * ((GROW_TIME - time) / GROW_TIME))), 1.0f));
+    @Override
+    public EntityDimensions getDimensions(Pose pose) {
+        float scale = Math.min(INITIAL_SCALE + (GROW_SCALE - (GROW_SCALE * ((GROW_TIME - time) / GROW_TIME))), 1.0f);
+
+        // Si le lanceur est Itachi, augmenter l’échelle de la hitbox
+        if (this.getOwner() instanceof com.sekwah.narutomod.entity.ItachiEntity) {
+            scale *= 3f; // même facteur que dans le renderer
+        }
+
+        return EntityDimensions.scalable(ENTITY_SIZE, ENTITY_SIZE).scale(scale);
     }
+
 
     @Override
     public void tick() {
@@ -92,6 +100,8 @@ public class FireballJutsuEntity extends AbstractHurtingProjectile {
     protected void onHit(HitResult hitResult) {
         super.onHit(hitResult);
 
+        boolean isItachi = this.getOwner() instanceof com.sekwah.narutomod.entity.ItachiEntity;
+
         if(this.level() instanceof ServerLevel serverLevel) {
             serverLevel.sendParticles(ParticleTypes.FLAME,
                     this.getX(),
@@ -103,15 +113,18 @@ public class FireballJutsuEntity extends AbstractHurtingProjectile {
 
         if (!this.level().isClientSide) {
 
-            int flameRadius = 8;
+            int flameRadius = isItachi ? 12 : 8; // plus grand pour Itachi
+            float baseDamage = isItachi ? 12f : 6f; // plus de dégâts pour Itachi
+
             this.level().getEntities(this, this.getBoundingBox().inflate(flameRadius, flameRadius, flameRadius)).forEach(entity -> {
-                double distance = this.position().distanceToSqr(entity.position());
-                if(entity == this.getOwner()) {
-                    distance += 16;
+                if (entity == this.getOwner()) {
+                    // Ne pas appliquer knockback/dégâts au lanceur
+                    return;
                 }
-                // Remember increasing the division reduces the falloff (I keep accidentally moving it the wrong way)
+
+                double distance = this.position().distanceToSqr(entity.position());
                 float fireSecs = (float) (8f - (distance / 6f)) * 20;
-                float fireDamage = (float) (12f - (distance / 4f));
+                float fireDamage = (float) (baseDamage - (distance / 4f)); // dégâts plus élevés si Itachi
 
                 if(entity.getRemainingFireTicks() < fireSecs) {
                     entity.setRemainingFireTicks(Math.round(fireSecs));
@@ -120,13 +133,11 @@ public class FireballJutsuEntity extends AbstractHurtingProjectile {
                 if(fireDamage > 0) {
                     Entity entity1 = this.getOwner();
                     if (entity instanceof LivingEntity livingEntity) {
-                        // Infliger 6 points de dégâts (3 cœurs)
-                        livingEntity.hurt(level().damageSources().explosion(this, this.getOwner()), 6.0F);
+                        livingEntity.hurt(level().damageSources().explosion(this, this.getOwner()), fireDamage);
 
-                        // Calculer la force de l'explosion
-                        Vec3 knockback = new Vec3(livingEntity.getX() - this.getX(), 0.5, livingEntity.getZ() - this.getZ()).normalize().scale(3);
+                        Vec3 knockback = new Vec3(livingEntity.getX() - this.getX(), 0.5, livingEntity.getZ() - this.getZ())
+                                .normalize().scale(isItachi ? 4 : 3); // plus de recul si Itachi
 
-                        // Appliquer la poussée
                         livingEntity.setDeltaMovement(knockback);
                     }
                     if (entity1 instanceof LivingEntity) {
@@ -138,7 +149,7 @@ public class FireballJutsuEntity extends AbstractHurtingProjectile {
             boolean flag = net.minecraftforge.event.ForgeEventFactory.getMobGriefingEvent(this.level(), this.getOwner());
 
             if(flag) {
-                int fireSpread = 2;
+                int fireSpread = isItachi ? 3 : 2; // feu qui se propage plus loin si Itachi
                 for (int x = (int) this.getX() - fireSpread; x < (int) this.getX() + fireSpread - 1; x++) {
                     for (int y = (int) this.getY() - fireSpread + 1; y < (int) this.getY() + fireSpread; y++) {
                         for (int z = (int) this.getZ() - fireSpread + 1; z < (int) this.getZ() + fireSpread; z++) {
@@ -155,8 +166,8 @@ public class FireballJutsuEntity extends AbstractHurtingProjectile {
 
             this.discard();
         }
-
     }
+
 
     @Override
     public void refreshDimensions() {
