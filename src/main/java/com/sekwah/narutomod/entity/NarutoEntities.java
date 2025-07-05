@@ -73,6 +73,7 @@ public class NarutoEntities {
                     .setTrackingRange(32)
                     .fireImmune());
 
+
     public static final RegistryObject<EntityType<com.sekwah.narutomod.entity.DeidaraCloneEntity>> DEIDARA_CLONE =
             register("deidara_clone",
                     EntityType.Builder.<com.sekwah.narutomod.entity.DeidaraCloneEntity>of(DeidaraCloneEntity::new, MobCategory.MONSTER)
@@ -80,6 +81,15 @@ public class NarutoEntities {
                             .clientTrackingRange(10)
                             .setTrackingRange(32)
                             .fireImmune());
+
+    public static final RegistryObject<EntityType<ItachiEntity>> ITACHI = ENTITIES.register("itachi",
+            () -> EntityType.Builder.of(ItachiEntity::new, MobCategory.MONSTER)
+                    .sized(0.6F, 1.8F) // taille humanoïde
+                    .clientTrackingRange(10)
+                    .setTrackingRange(32)
+                    .fireImmune()
+                    .build("itachi"));
+
 
 
 
@@ -109,6 +119,7 @@ public class NarutoEntities {
         event.put(NarutoEntities.DEIDARA.get(), DeidaraEntity.createAttributes().build());
         event.put(NarutoEntities.DEIDARA_CLONE.get(), DeidaraCloneEntity.createAttributes().build());
         event.put(NarutoEntities.ICHIRAKU.get(), IchirakuEntity.createAttributes().build());
+        event.put(NarutoEntities.ITACHI.get(), ItachiEntity.createAttributes().build());
 }
 
 
