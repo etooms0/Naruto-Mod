@@ -92,34 +92,37 @@ public class SusanoEntity extends Mob implements GeoEntity {
             return;
         }
 
-        if (owner != null && owner.isAlive()) {
-            this.setPos(owner.getX(), owner.getY(), owner.getZ());
-            float yaw   = owner.getYRot();
-            float pitch = owner.getXRot();
-            this.setYRot(yaw);
-            this.setXRot(pitch);
-            this.yBodyRot = yaw;
-            this.yHeadRot = owner.yHeadRot;
+        if (owner == null || !owner.isAlive()) {
+            // Supprime proprement l'entité côté serveur
+            this.remove(RemovalReason.DISCARDED);
+            return;
+        }
 
-            double radius = 2.0D; // zone autour du Susano où on détecte les projectiles
-            AABB detectionBox = this.getBoundingBox().inflate(radius);
+        this.setPos(owner.getX(), owner.getY(), owner.getZ());
+        float yaw = owner.getYRot();
+        float pitch = owner.getXRot();
+        this.setYRot(yaw);
+        this.setXRot(pitch);
+        this.yBodyRot = yaw;
+        this.yHeadRot = owner.yHeadRot;
 
-            for (Projectile projectile : this.level().getEntitiesOfClass(Projectile.class, detectionBox)) {
-                if (projectile.isAlive() && !projectile.isRemoved()) {
-                    Vec3 projPos = projectile.position();
-                    Vec3 susanoPos = this.position();
-                    Vec3 toProj = projPos.subtract(susanoPos);
+        double radius = 2.0D;
+        AABB detectionBox = this.getBoundingBox().inflate(radius);
 
-                    Vec3 velocity = projectile.getDeltaMovement();
-                    if (velocity.dot(toProj) < 0) { // projectile va vers Susano
-                        projectile.setDeltaMovement(velocity.multiply(-1, -1, -1));
-                    }
+        for (Projectile projectile : this.level().getEntitiesOfClass(Projectile.class, detectionBox)) {
+            if (projectile.isAlive() && !projectile.isRemoved()) {
+                Vec3 projPos = projectile.position();
+                Vec3 susanoPos = this.position();
+                Vec3 toProj = projPos.subtract(susanoPos);
+
+                Vec3 velocity = projectile.getDeltaMovement();
+                if (velocity.dot(toProj) < 0) {
+                    projectile.setDeltaMovement(velocity.multiply(-1, -1, -1));
                 }
             }
-        } else {
-            discard();
         }
     }
+
 
     @Override
     public double getMyRidingOffset() {

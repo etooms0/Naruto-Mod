@@ -1,6 +1,5 @@
 package com.sekwah.narutomod.entity;
 
-import com.sekwah.narutomod.menu.IchirakuTradeMenu;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.chat.Component;
@@ -94,7 +93,48 @@ public class IchirakuEntity extends Villager {
         return this.getOffers();
     }
 
+    @Override
+    public InteractionResult mobInteract(Player player, InteractionHand hand) {
+        ItemStack held = player.getItemInHand(hand);
 
+        // Donne un bol au joueur en échange d'un seau d'eau (exemple)
+        if (!this.level().isClientSide && held.getItem() == Items.WATER_BUCKET) {
+            ItemStack ramenBowl = new ItemStack(Items.BOWL); // à remplacer par item ramen custom
+            if (!player.getInventory().add(ramenBowl)) {
+                player.drop(ramenBowl, false);
+            }
+            if (!player.isCreative()) {
+                held.shrink(1);
+                player.setItemInHand(hand, new ItemStack(Items.BUCKET));
+            }
+            this.level().playSound(null, this.blockPosition(), SoundEvents.BOTTLE_FILL_DRAGONBREATH, this.getSoundSource(), 1.0F, 1.0F);
+            return InteractionResult.SUCCESS;
+        }
+
+        // Si joueur donne un bol, Ichiraku le suit doucement
+        if (!this.level().isClientSide && held.getItem() == Items.BOWL) {
+            this.followPlayer = player;
+            this.level().playSound(null, this.blockPosition(), SoundEvents.VILLAGER_YES, this.getSoundSource(), 1.0F, 1.0F);
+            return InteractionResult.SUCCESS;
+        }
+
+        // Sinon ouverture du menu de trading
+        if (!this.level().isClientSide && player instanceof ServerPlayer serverPlayer) {
+            this.setTradingPlayer(serverPlayer);
+            this.updateTrades();
+
+            serverPlayer.openMenu(new SimpleMenuProvider(
+                    (windowId, inv, p) -> {
+                        this.setTradingPlayer(p);
+                        return new MerchantMenu(windowId, inv, this);
+                    },
+                    this.getDisplayName()
+            ));
+            return InteractionResult.CONSUME;
+        }
+
+        return InteractionResult.SUCCESS;
+    }
 
     @Override
     public void setTradingPlayer(Player player) {
@@ -105,22 +145,6 @@ public class IchirakuEntity extends Villager {
     public Player getTradingPlayer() {
         return this.tradingPlayer;
     }
-
-    @Override
-    public InteractionResult mobInteract(Player player, InteractionHand hand) {
-        if (!this.level().isClientSide) {
-            if (player instanceof ServerPlayer serverPlayer) {
-                // Ouvre le menu de trade avec 4 arguments (windowId, playerInventory, merchant, level)
-                serverPlayer.openMenu(new SimpleMenuProvider(
-                        (windowId, inventory, p) -> new IchirakuTradeMenu(windowId, inventory, this, this.level()),
-                        this.getDisplayName()
-                ));
-            }
-            return InteractionResult.CONSUME; // Interaction prise en compte côté serveur
-        }
-        return InteractionResult.SUCCESS; // côté client, succès simple
-    }
-
 
     @Override
     public void tick() {
