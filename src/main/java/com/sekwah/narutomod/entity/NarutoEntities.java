@@ -81,6 +81,14 @@ public class NarutoEntities {
                             .setTrackingRange(32)
                             .fireImmune());
 
+    public static final RegistryObject<EntityType<ItachiEntity>> ITACHI = ENTITIES.register("itachi",
+            () -> EntityType.Builder.of(ItachiEntity::new, MobCategory.MONSTER)
+                    .sized(0.6F, 1.8F) // taille humanoïde
+                    .clientTrackingRange(10)
+                    .setTrackingRange(32)
+                    .fireImmune()
+                    .build("itachi"));
+
 
 
     public static final RegistryObject<EntityType<FireballJutsuEntity>> FIREBALL_JUTSU = register("fireball_jutsu",
@@ -109,6 +117,7 @@ public class NarutoEntities {
         event.put(NarutoEntities.DEIDARA.get(), DeidaraEntity.createAttributes().build());
         event.put(NarutoEntities.DEIDARA_CLONE.get(), DeidaraCloneEntity.createAttributes().build());
         event.put(NarutoEntities.ICHIRAKU.get(), IchirakuEntity.createAttributes().build());
+        event.put(ITACHI.get(), ItachiEntity.createAttributes().build());
 }
 
 
