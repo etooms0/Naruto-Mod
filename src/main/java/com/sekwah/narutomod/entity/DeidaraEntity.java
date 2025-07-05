@@ -198,7 +198,7 @@ public class DeidaraEntity extends Monster {
         return Monster.createMonsterAttributes()
                 .add(Attributes.MAX_HEALTH, 300.0D)
                 .add(Attributes.ATTACK_DAMAGE, 10.0D)
-                .add(Attributes.MOVEMENT_SPEED, 0.50D)
+                .add(Attributes.MOVEMENT_SPEED, 0.2D)
                 .add(Attributes.FOLLOW_RANGE, 32.0D);
     }
 
@@ -217,6 +217,10 @@ public class DeidaraEntity extends Monster {
 
         if (!this.level().isClientSide()) {
             bossBar.setProgress(this.getHealth() / this.getMaxHealth());
+        }
+
+        if (this.getHealth() < this.getMaxHealth() * 0.15F && !this.getItemBySlot(EquipmentSlot.CHEST).isEmpty()) {
+            this.setItemSlot(EquipmentSlot.CHEST, ItemStack.EMPTY);
         }
 
         // Marchez sur l'eau

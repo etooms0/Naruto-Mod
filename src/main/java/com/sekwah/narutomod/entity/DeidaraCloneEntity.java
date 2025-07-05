@@ -35,7 +35,7 @@ public class DeidaraCloneEntity extends DeidaraEntity {
         return Mob.createMobAttributes()
                 .add(Attributes.MAX_HEALTH, 1.0D)
                 .add(Attributes.ATTACK_DAMAGE, 2.0D) // indispensable pour les attaques
-                .add(Attributes.MOVEMENT_SPEED, 0.5D); // tu peux ajuster
+                .add(Attributes.MOVEMENT_SPEED, 0.2D); // tu peux ajuster
     }
 
     @Override
