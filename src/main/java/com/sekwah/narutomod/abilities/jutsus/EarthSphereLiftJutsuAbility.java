@@ -349,6 +349,13 @@ public class EarthSphereLiftJutsuAbility extends Ability implements Ability.Cool
                 // Explosion sans drop d’items (TNT-style)
                 level.explode(null, expCenter.x, expCenter.y, expCenter.z, 6.0F, true, Level.ExplosionInteraction.TNT);
 
+                // Nettoyer les FallingBlockEntities
+                for (Entity fallingBlock : data.fallingBlocks) {
+                    if (!fallingBlock.isRemoved()) {
+                        fallingBlock.remove(Entity.RemovalReason.DISCARDED);
+                    }
+                }
+
                 // Suppression de l’attracteur de la liste active
                 it.remove();
             }

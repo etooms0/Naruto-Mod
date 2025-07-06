@@ -26,6 +26,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.ServerLevelAccessor;
+import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.network.NetworkHooks;
 
 import javax.annotation.Nullable;
@@ -58,6 +59,24 @@ public class PainEntity extends Monster {
 
         if (!this.level().isClientSide()) {
             bossBar.setProgress(this.getHealth() / this.getMaxHealth());
+
+            // Compteur pour gérer le TP toutes les 30s (600 ticks)
+            if (this.tickCount % 600 == 0) {
+                // Chercher le joueur cible dans un rayon de 15 blocs
+                double range = 15.0D;
+                LivingEntity target = this.level()
+                        .getEntitiesOfClass(LivingEntity.class, this.getBoundingBox().inflate(range))
+                        .stream()
+                        .filter(e -> e != this && !(e instanceof PainEntity))
+                        .findFirst()
+                        .orElse(null);
+
+                if (target != null) {
+                    // TP direct à la position du joueur (ou proche)
+                    Vec3 targetPos = target.position();
+                    this.teleportTo(targetPos.x, targetPos.y, targetPos.z);
+                }
+            }
 
             if (jutsuCooldown > 0) {
                 jutsuCooldown--;
@@ -106,6 +125,7 @@ public class PainEntity extends Monster {
             }
         }
     }
+
 
 
 
