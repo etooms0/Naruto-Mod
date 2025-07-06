@@ -105,8 +105,22 @@ public class NarutoEntities {
                     .fireImmune()
                     .build("pain"));
 
+    public static final RegistryObject<EntityType<ObitoCloneEntity>> OBITO_CLONE = ENTITIES.register("obito_clone",
+            () -> EntityType.Builder.of(ObitoCloneEntity::new, MobCategory.MONSTER)
+                    .sized(0.6F, 1.8F) // taille humanoïde
+                    .clientTrackingRange(10)
+                    .setTrackingRange(32)
+                    .fireImmune()
+                    .build("obito_clone"));
 
 
+    public static final RegistryObject<EntityType<ObitoEntity>> OBITO = ENTITIES.register("obito",
+            () -> EntityType.Builder.of(ObitoEntity::new, MobCategory.MONSTER)
+                    .sized(0.6F, 1.8F) // taille humanoïde
+                    .clientTrackingRange(10)
+                    .setTrackingRange(32)
+                    .fireImmune()
+                    .build("obito"));
 
     public static final RegistryObject<EntityType<FireballJutsuEntity>> FIREBALL_JUTSU = register("fireball_jutsu",
             EntityType.Builder.<FireballJutsuEntity>of(FireballJutsuEntity::new, MobCategory.MISC).sized(1.5F, 1.5F).clientTrackingRange(4).updateInterval(10));
@@ -137,6 +151,8 @@ public class NarutoEntities {
         event.put(ITACHI.get(), ItachiEntity.createAttributes().build());
         event.put(HIDAN.get(), HidanEntity.createAttributes().build());
         event.put(PAIN.get(), PainEntity.createAttributes().build());
+        event.put(OBITO.get(), ObitoEntity.createAttributes().build());
+        event.put(OBITO_CLONE.get(), ObitoCloneEntity.createAttributes().build());
 }
 
 
