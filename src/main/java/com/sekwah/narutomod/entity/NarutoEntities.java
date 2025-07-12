@@ -51,11 +51,6 @@ public class NarutoEntities {
                     .sized(0.6F, 1.8F)
                     .clientTrackingRange(8));
 
-    public static final RegistryObject<EntityType<IchirakuEntity>> ICHIRAKU =
-            ENTITIES.register("ichiraku",
-                    () -> EntityType.Builder.of(IchirakuEntity::new, MobCategory.CREATURE)
-                            .sized(0.6f, 1.8f)
-                            .build("ichiraku"));
 
     public static final RegistryObject<EntityType<SusanoEntity>> SUSANO = register("susano",
             EntityType.Builder.<SusanoEntity>of(SusanoEntity::new, MobCategory.MISC)
@@ -147,7 +142,6 @@ public class NarutoEntities {
         event.put(SUBSTITUTION_LOG.get(), SubstitutionLogEntity.createAttributes().build());
         event.put(NarutoEntities.DEIDARA.get(), DeidaraEntity.createAttributes().build());
         event.put(NarutoEntities.DEIDARA_CLONE.get(), DeidaraCloneEntity.createAttributes().build());
-        event.put(NarutoEntities.ICHIRAKU.get(), IchirakuEntity.createAttributes().build());
         event.put(ITACHI.get(), ItachiEntity.createAttributes().build());
         event.put(HIDAN.get(), HidanEntity.createAttributes().build());
         event.put(PAIN.get(), PainEntity.createAttributes().build());
