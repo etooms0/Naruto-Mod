@@ -89,7 +89,7 @@ public class MultipleShadowCloneAbility extends Ability implements Ability.Coold
 
     @Override
     public int getCooldown() {
-        return 3 * 20;
+        return 90 * 20;
     }
 
     public void spawnCloneAt(Player player, Vec3 pos, INinjaData ninjaData) {

@@ -37,13 +37,14 @@ public class ShadowCloneAbility extends Ability implements Ability.Cooldown {
         return 1332;
     }
 
+
     @Override
     public boolean handleCost(Player player, INinjaData ninjaData, int chargeAmount) {
         if(ninjaData.getChakra() < 30) {
             player.displayClientMessage(Component.translatable("jutsu.fail.notenoughchakra", Component.translatable(this.getTranslationKey(ninjaData)).withStyle(ChatFormatting.YELLOW)), true);
             return false;
         }
-        ninjaData.useChakra(30, 30);
+        ninjaData.useChakra(10, 20*5);
         return true;
     }
 
@@ -51,12 +52,11 @@ public class ShadowCloneAbility extends Ability implements Ability.Cooldown {
     public void performServer(Player player, INinjaData ninjaData, int ticksActive) {
         ninjaData.scheduleDelayedTickEvent((delayedPlayer) -> {
 
-            System.out.println("[+] - Shadow Clone Jutsu launched !");
             ItemStack heldItem = player.getMainHandItem();
             boolean hasBow = heldItem.getItem() instanceof net.minecraft.world.item.BowItem;
 
             Vec3 playerPos = player.position();
-            int cloneCount = 3;
+            int cloneCount = 1;
 
             if (hasBow) {
                 // cercle à 3 clones
@@ -90,7 +90,7 @@ public class ShadowCloneAbility extends Ability implements Ability.Cooldown {
 
     @Override
     public int getCooldown() {
-        return 3 * 20;
+        return 5 * 20;
     }
 
     public void spawnCloneAt(Player player, Vec3 pos, INinjaData ninjaData) {

@@ -32,7 +32,7 @@ public class FreezeCubeJutsuAbility extends Ability implements Ability.Cooldown 
 
     @Override
     public int getCooldown() {
-        return 5 * 20; // Cooldown de 5 secondes (5*20 ticks)
+        return 60 * 20 * 4;
     }
 
     @Override

@@ -64,7 +64,7 @@ public class EarthSphereLiftJutsuAbility extends Ability implements Ability.Cool
 
     @Override
     public int getCooldown() {
-        return 30 * 20;
+        return 5 * 60 * 20;
     }
 
     @Override

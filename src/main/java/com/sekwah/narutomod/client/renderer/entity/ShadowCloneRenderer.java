@@ -35,9 +35,6 @@ public class ShadowCloneRenderer extends LivingEntityRenderer<ShadowCloneEntity,
     public void render(ShadowCloneEntity entity, float entityYaw, float partialTicks, PoseStack poseStack, MultiBufferSource buffer, int packedLight) {
         this.shadowRadius = 0.3F;
         super.render(entity, entityYaw, partialTicks, poseStack, buffer, packedLight);
-
-        System.out.println("[DEBUG] - Rendu du clone : " + entity.getName().getString());
-        System.out.println("[DEBUG] - Affichage des objets en main...");
     }
 
 
@@ -45,7 +42,6 @@ public class ShadowCloneRenderer extends LivingEntityRenderer<ShadowCloneEntity,
     public ResourceLocation getTextureLocation(ShadowCloneEntity entity) {
         if (entity.getGameProfile() != null) {
             ResourceLocation skin = Minecraft.getInstance().getSkinManager().getInsecureSkinLocation(entity.getGameProfile());
-            System.out.println("[DEBUG] Skin ResourceLocation: " + skin);
             return skin;
         }
         return new ResourceLocation("minecraft", "textures/entity/player/slim/steve.png");

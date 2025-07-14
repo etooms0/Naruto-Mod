@@ -76,6 +76,6 @@ public class FireballJutsuAbility extends Ability implements Ability.Cooldown {
 
     @Override
     public int getCooldown() {
-        return 3 * 20;
+        return 30 * 20;
     }
 }

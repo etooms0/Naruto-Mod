@@ -29,7 +29,7 @@ public class BarrierJutsuAbility extends Ability implements Ability.Cooldown {
 
     @Override
     public int getCooldown() {
-        return 3 * 20;
+        return 3 * 20 * 60;
     }
 
     @Override

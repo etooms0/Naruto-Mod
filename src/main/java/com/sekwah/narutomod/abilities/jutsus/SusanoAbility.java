@@ -33,7 +33,7 @@ public class SusanoAbility extends Ability implements Ability.Cooldown {
             );
             return false;
         }
-        ninjaData.useChakra(80, 80);
+        ninjaData.useChakra(80, 60);
         return true;
     }
 
@@ -67,6 +67,6 @@ public class SusanoAbility extends Ability implements Ability.Cooldown {
 
     @Override
     public int getCooldown() {
-        return 60 * 20;
+        return 5 * 60 * 20;
     }
 }

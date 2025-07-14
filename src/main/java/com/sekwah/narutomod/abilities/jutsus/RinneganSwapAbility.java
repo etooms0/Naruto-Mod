@@ -21,7 +21,7 @@ public class RinneganSwapAbility extends Ability implements Ability.Cooldown {
 
     @Override
     public int getCooldown() {
-        return 3 * 20; // Cooldown de 3 secondes (en ticks)
+        return  20 * 45;
     }
 
     @Override
@@ -48,25 +48,18 @@ public class RinneganSwapAbility extends Ability implements Ability.Cooldown {
     @Override
     public void performServer(Player player, INinjaData ninjaData, int chargeAmount) {
         if (!(player instanceof ServerPlayer serverPlayer)) {
-            System.out.println("[DEBUG] - Jutsu annulé : le joueur n'est pas un ServerPlayer !");
             return;
         }
 
-        // 🟢 Tentative de détection de l'entité regardée
         Entity target = getLookedAtEntity(serverPlayer, 50.0);
         if (target == null) {
-            System.out.println("[DEBUG] - Aucune entité détectée dans le champ de vision !");
             return;
         }
 
-        // 🟢 Vérification : éviter un swap avec soi-même
         if (target == player) {
-            System.out.println("[DEBUG] - Impossible d'échanger avec soi-même !");
             return;
         }
 
-        // 🟢 Exécution de la téléportation
-        System.out.println("[DEBUG] - Téléportation : " + player.getName().getString() + " ↔ " + target.getName().getString());
         swapPositions(serverPlayer, target);
     }
 
@@ -75,8 +68,6 @@ public class RinneganSwapAbility extends Ability implements Ability.Cooldown {
         Vec3 playerPos = player.position();
         Vec3 targetPos = target.position();
 
-        System.out.println("[DEBUG] - Téléportation de " + player.getName().getString() + " ↔ " + target.getName().getString());
-
         if (!player.level().isClientSide) {
             player.teleportTo(targetPos.x, targetPos.y, targetPos.z);
             target.teleportTo(playerPos.x, playerPos.y, playerPos.z);
@@ -84,9 +75,6 @@ public class RinneganSwapAbility extends Ability implements Ability.Cooldown {
             target.setPos(playerPos.x, playerPos.y, playerPos.z);
             player.setPos(targetPos.x, targetPos.y, targetPos.z);
 
-            System.out.println("[DEBUG] - Téléportation réussie !");
-        } else {
-            System.out.println("[DEBUG] - Échec téléportation : client-side !");
         }
     }
 

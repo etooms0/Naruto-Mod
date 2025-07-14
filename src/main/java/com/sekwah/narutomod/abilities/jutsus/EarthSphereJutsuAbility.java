@@ -24,7 +24,7 @@ public class EarthSphereJutsuAbility extends Ability implements Ability.Cooldown
 
     @Override
     public int getCooldown() {
-        return 10 * 20;  // Cooldown de 10 secondes (10 * 20 ticks)
+        return 20 * 60 * 4;  // Cooldown de 10 secondes (10 * 20 ticks)
     }
 
     @Override
@@ -105,7 +105,7 @@ public class EarthSphereJutsuAbility extends Ability implements Ability.Cooldown
                     Component.translatable(this.getTranslationKey(ninjaData)).withStyle(ChatFormatting.YELLOW)), true);
             return false;
         }
-        ninjaData.useChakra(chakraCost, 200);
+        ninjaData.useChakra(chakraCost, 60);
         return true;
     }
 }

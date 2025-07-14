@@ -30,6 +30,9 @@ import java.util.Random;
 
 public class ObitoEntity extends Monster {
 
+    private int invulnerableTicks = 0;
+
+
     private final ServerBossEvent bossBar = new ServerBossEvent(
             Component.literal("Obito Uchiha"), BossEvent.BossBarColor.PURPLE, BossEvent.BossBarOverlay.PROGRESS);
 
@@ -53,38 +56,78 @@ public class ObitoEntity extends Monster {
     public void tick() {
         super.tick();
 
-        if (!this.level().isClientSide()) {
-            bossBar.setProgress(this.getHealth() / this.getMaxHealth());
+        if (level().isClientSide) return;
 
-            if (ultimateCooldown > 0) {
-                ultimateCooldown--;
-            } else {
-                // Lance l'ultimate si un joueur est proche
-                double range = 8.0D;
-                List<Player> players = this.level().getEntitiesOfClass(Player.class, this.getBoundingBox().inflate(range));
-                if (!players.isEmpty()) {
-                    this.obitoUltimate();
-                    ultimateCooldown = 20 * 40; // cooldown 40s
-                }
-            }
+        bossBar.setProgress(getHealth() / getMaxHealth());
 
-            // Spawn clone quand la vie est sous 50%
-            if (this.getHealth() < this.getMaxHealth() / 2 && this.level().random.nextInt(400) == 0) {
-                ObitoCloneEntity clone = new ObitoCloneEntity(NarutoEntities.OBITO_CLONE.get(), this.level());
-                clone.moveTo(this.getX() + random.nextDouble() * 2, this.getY(), this.getZ() + random.nextDouble() * 2, this.getYRot(), this.getXRot());
-                clone.setOwner(this);
-                this.level().addFreshEntity(clone);
-            }
+        if (getHealth() < getMaxHealth() * 0.25F && invulnerableTicks < 200) {
+            this.setInvulnerable(true);
+            invulnerableTicks++;
+        } else {
+            this.setInvulnerable(false);
+        }
 
-            // Téléportation aléatoire pour fuir un peu
-            if (this.level().random.nextInt(600) == 0) {
-                double tx = this.getX() + (random.nextDouble() - 0.5) * 16;
-                double ty = this.getY() + random.nextInt(3) - 1;
-                double tz = this.getZ() + (random.nextDouble() - 0.5) * 16;
-                this.teleportTo(tx, ty, tz);
+
+        tryCastUltimate();
+        trySpawnClone();
+        tryRandomTeleportToTarget();
+    }
+
+    private void trySpawnClone() {
+        if (this.getHealth() < this.getMaxHealth() / 2 && this.level().random.nextInt(400) == 0) {
+            ObitoCloneEntity clone = new ObitoCloneEntity(NarutoEntities.OBITO_CLONE.get(), this.level());
+            clone.moveTo(
+                    this.getX() + (random.nextDouble() - 0.5) * 4.0,
+                    this.getY(),
+                    this.getZ() + (random.nextDouble() - 0.5) * 4.0,
+                    this.getYRot(),
+                    this.getXRot()
+            );
+            clone.setOwner(this);
+            this.level().addFreshEntity(clone);
+
+            this.level().playSound(null, this.blockPosition(), SoundEvents.EVOKER_PREPARE_SUMMON, SoundSource.HOSTILE, 1.0F, 1.0F);
+            for (int i = 0; i < 10; i++) {
+                double dx = this.getX() + (random.nextDouble() - 0.5) * 2;
+                double dy = this.getY() + 1 + random.nextDouble();
+                double dz = this.getZ() + (random.nextDouble() - 0.5) * 2;
+                this.level().addParticle(ParticleTypes.SMOKE, dx, dy, dz, 0, 0.1, 0);
             }
         }
     }
+
+
+
+    private void tryCastUltimate() {
+        if (ultimateCooldown > 0) {
+            ultimateCooldown--;
+            return;
+        }
+
+        double range = 8.0D;
+        List<Player> players = this.level().getEntitiesOfClass(Player.class, this.getBoundingBox().inflate(range));
+        if (!players.isEmpty()) {
+            this.castUltimate();
+            ultimateCooldown = 20 * 40; // cooldown 40 secondes
+        }
+    }
+
+
+    private void tryRandomTeleportToTarget() {
+        if (random.nextInt(500) == 0) {
+            Player target = level().getNearestPlayer(this, 10);
+            if (target != null) {
+                double dx = -Math.sin(Math.toRadians(target.getYRot())) * 2.0;
+                double dz = Math.cos(Math.toRadians(target.getYRot())) * 2.0;
+                double tx = target.getX() + dx;
+                double ty = target.getY();
+                double tz = target.getZ() + dz;
+                teleportTo(tx, ty, tz);
+                level().playSound(null, blockPosition(), SoundEvents.ENDERMAN_TELEPORT, SoundSource.HOSTILE, 1.0F, 1.0F);
+            }
+        }
+    }
+
 
     private void obitoUltimate() {
         // AOE simple : inflige des dégâts + effet de confusion et ralentissement
@@ -121,11 +164,39 @@ public class ObitoEntity extends Monster {
         bossBar.removePlayer(player);
     }
 
+    private void castUltimate() {
+        List<LivingEntity> affected = level().getEntitiesOfClass(LivingEntity.class, getBoundingBox().inflate(7.0D), e -> e != this);
+
+        level().playSound(null, blockPosition(), SoundEvents.END_PORTAL_SPAWN, SoundSource.HOSTILE, 1.5F, 0.9F);
+
+        for (LivingEntity target : affected) {
+            // Aspiration vers Obito
+            double dx = this.getX() - target.getX();
+            double dz = this.getZ() - target.getZ();
+            double pullStrength = 0.5D;
+            target.setDeltaMovement(dx * pullStrength, 0.1, dz * pullStrength);
+
+            // Dégâts et effets
+            target.hurt(damageSources().magic(), 15.0F);
+            target.addEffect(new MobEffectInstance(MobEffects.CONFUSION, 160, 1));
+            target.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, 100, 2));
+        }
+
+        for (int i = 0; i < 40; i++) {
+            double px = getX() + (random.nextDouble() - 0.5) * 10;
+            double py = getY() + random.nextDouble() * 3;
+            double pz = getZ() + (random.nextDouble() - 0.5) * 10;
+            level().addParticle(ParticleTypes.PORTAL, px, py, pz, 0, 0, 0);
+        }
+    }
+
+
     @Override
     public void die(DamageSource cause) {
+        this.setInvulnerable(false); // Assure qu’il est tuable à la fin
         super.die(cause);
-        // Tu peux mettre un message ou un drop spécial ici
     }
+
 
     public static AttributeSupplier.Builder createAttributes() {
         return Monster.createMonsterAttributes()

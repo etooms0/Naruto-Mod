@@ -51,6 +51,6 @@ public class WaterBulletJutsuAbility extends Ability implements Ability.Cooldown
 
     @Override
     public int getCooldown() {
-        return 4 * 20;
+        return 30 * 20;
     }
 }
