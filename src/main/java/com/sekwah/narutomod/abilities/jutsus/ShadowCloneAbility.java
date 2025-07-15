@@ -19,6 +19,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
@@ -113,6 +114,9 @@ public class ShadowCloneAbility extends Ability implements Ability.Cooldown {
         );
         clone.setPos(pos.add(0, 1, 0));
         clone.setOwner(player);
+
+        clone.getAttribute(Attributes.MAX_HEALTH).setBaseValue(8.0D);
+        clone.setHealth(8.0F);  // pour remettre la vie à fond
 
         // Transmet la cible si nécessaire
         if (player.getLastHurtMob() != null) {
