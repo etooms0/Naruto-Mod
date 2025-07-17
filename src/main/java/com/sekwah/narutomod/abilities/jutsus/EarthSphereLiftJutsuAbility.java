@@ -84,6 +84,11 @@ public class EarthSphereLiftJutsuAbility extends Ability implements Ability.Cool
         return null;
     }
 
+    @Override
+    public int getWeight(){
+        return 3;
+    }
+
     public void performFromEntity(LivingEntity caster, Vec3 targetPos) {
         Level level = caster.level();
         Vec3 attractor = targetPos.add(0, 20, 0);

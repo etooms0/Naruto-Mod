@@ -38,6 +38,11 @@ public class FireballJutsuAbility extends Ability implements Ability.Cooldown {
         return true;
     }
 
+    @Override
+    public int getWeight(){
+        return 1;
+    }
+
     public void performFromEntity(LivingEntity entity) {
         Level level = entity.level();
 

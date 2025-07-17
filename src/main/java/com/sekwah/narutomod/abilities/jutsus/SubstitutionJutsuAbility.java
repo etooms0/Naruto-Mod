@@ -30,6 +30,11 @@ public class SubstitutionJutsuAbility extends Ability implements Ability.Channel
     }
 
     @Override
+    public int getWeight(){
+        return 0;
+    }
+
+    @Override
     public boolean handleCost(Player player, INinjaData ninjaData, int chargeAmount) {
         if (ninjaData.getSubstitutionCount() < 1 && chargeAmount == -1) {
             player.displayClientMessage(Component.translatable("jutsu.fail.notenoughcharges", Component.translatable(this.getTranslationKey(ninjaData)).withStyle(ChatFormatting.YELLOW)), true);

@@ -25,6 +25,11 @@ public class RinneganSwapAbility extends Ability implements Ability.Cooldown {
     }
 
     @Override
+    public int getWeight(){
+        return 3;
+    }
+
+    @Override
     public ActivationType activationType() {
         return ActivationType.INSTANT;
     }

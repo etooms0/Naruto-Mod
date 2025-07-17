@@ -21,6 +21,11 @@ public class WaterBulletJutsuAbility extends Ability implements Ability.Cooldown
     }
 
     @Override
+    public int getWeight(){
+        return 1;
+    }
+
+    @Override
     public long defaultCombo() {
         return 132;
     }

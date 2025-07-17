@@ -21,6 +21,11 @@ public class SusanoAbility extends Ability implements Ability.Cooldown {
     }
 
     @Override
+    public int getWeight(){
+        return 2;
+    }
+
+    @Override
     public boolean handleCost(Player player, INinjaData ninjaData, int chargeAmount) {
         if (ninjaData.getChakra() < 80) {
             player.displayClientMessage(

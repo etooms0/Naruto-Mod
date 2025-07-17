@@ -43,6 +43,11 @@ public class MultipleShadowCloneAbility extends Ability implements Ability.Coold
     }
 
     @Override
+    public int getWeight(){
+        return 3;
+    }
+
+    @Override
     public void performServer(Player player, INinjaData ninjaData, int ticksActive) {
         ninjaData.scheduleDelayedTickEvent((delayedPlayer) -> {
             System.out.println("[+] - Shadow Clone Jutsu launched !");

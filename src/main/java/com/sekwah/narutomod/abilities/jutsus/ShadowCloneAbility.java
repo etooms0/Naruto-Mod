@@ -40,6 +40,11 @@ public class ShadowCloneAbility extends Ability implements Ability.Cooldown {
 
 
     @Override
+    public int getWeight(){
+        return 2;
+    }
+
+    @Override
     public boolean handleCost(Player player, INinjaData ninjaData, int chargeAmount) {
         if(ninjaData.getChakra() < 30) {
             player.displayClientMessage(Component.translatable("jutsu.fail.notenoughchakra", Component.translatable(this.getTranslationKey(ninjaData)).withStyle(ChatFormatting.YELLOW)), true);

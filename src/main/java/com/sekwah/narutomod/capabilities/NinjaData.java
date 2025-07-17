@@ -2,6 +2,7 @@ package com.sekwah.narutomod.capabilities;
 
 import com.mojang.logging.LogUtils;
 import com.sekwah.narutomod.abilities.Ability;
+import com.sekwah.narutomod.abilities.JutsuDeck;
 import com.sekwah.narutomod.capabilities.toggleabilitydata.ToggleAbilityData;
 import com.sekwah.narutomod.config.NarutoConfig;
 import com.sekwah.narutomod.gameevents.NarutoGameEvents;
@@ -10,8 +11,11 @@ import com.sekwah.sekclib.capabilitysync.capabilitysync.annotation.Sync;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.StringTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.player.Player;
@@ -23,12 +27,13 @@ import org.slf4j.Logger;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
+import java.util.*;
 import java.util.function.Consumer;
 
 public class NinjaData implements INinjaData, ICapabilityProvider {
+
+    private final JutsuDeck jutsuDeck = new JutsuDeck();
+
 
     private static final Logger LOGGER = LogUtils.getLogger();
 
@@ -387,22 +392,38 @@ public class NinjaData implements INinjaData, ICapabilityProvider {
     }
 
     @Override
-    public Tag serializeNBT() {
-        final CompoundTag nbt = new CompoundTag();
-        nbt.putFloat(CHAKRA_TAG, this.chakra);
-        nbt.putFloat(STAMINA_TAG, this.stamina);
-        nbt.putBoolean(NINJA_MODE_ENABLED, this.ninjaModeEnabled);
-        long currentTime = System.currentTimeMillis();
-        nbt.putLong(SAVE_TIME, currentTime);
-        final CompoundTag cooldownData = new CompoundTag();
+    public CompoundTag serializeNBT() {
+        CompoundTag compoundTag = new CompoundTag();
+
+        compoundTag.putFloat(CHAKRA_TAG, this.chakra);
+        compoundTag.putFloat(STAMINA_TAG, this.stamina);
+        compoundTag.putBoolean(NINJA_MODE_ENABLED, this.ninjaModeEnabled);
+
+        CompoundTag cooldownData = new CompoundTag();
         for (String key : this.cooldownTickEvents.keySet()) {
-            CooldownTickEvent event = this.cooldownTickEvents.get(key);
-            cooldownData.putInt(key, event.ticks);
+            cooldownData.putInt(key, this.cooldownTickEvents.get(key).ticks);
         }
-        nbt.put(COOLDOWN_TAG, cooldownData);
-        nbt.putFloat(SUBSTITUTION_TAG, this.substitutions);
-        return nbt;
+        compoundTag.put(COOLDOWN_TAG, cooldownData);
+
+        compoundTag.putFloat(SUBSTITUTION_TAG, this.substitutions);
+
+        // === Sérialisation du JutsuDeck ===
+        ListTag jutsuList = new ListTag();
+        for (Ability ability : this.jutsuDeck.getAbilities()) {
+            NarutoRegistries.ABILITIES.getResourceKey(ability).ifPresent(key -> {
+                jutsuList.add(StringTag.valueOf(key.location().toString()));
+            });
+        }
+        compoundTag.put("JutsuDeck", jutsuList);
+
+        // Sauvegarder le temps actuel
+        compoundTag.putLong(SAVE_TIME, System.currentTimeMillis());
+
+        return compoundTag;
     }
+
+
+
 
     @Override
     public void deserializeNBT(Tag tag) {
@@ -410,16 +431,35 @@ public class NinjaData implements INinjaData, ICapabilityProvider {
             long currentTime = System.currentTimeMillis();
             long saveTime = compoundTag.getLong(SAVE_TIME);
             int ticksPassed = Math.max((int) ((currentTime - saveTime) / 1000 * 20), 0);
+
             this.chakra = compoundTag.getFloat(CHAKRA_TAG);
             this.stamina = compoundTag.getFloat(STAMINA_TAG);
             this.ninjaModeEnabled = compoundTag.getBoolean(NINJA_MODE_ENABLED);
+
             CompoundTag cooldownData = compoundTag.getCompound(COOLDOWN_TAG);
             for (String key : cooldownData.getAllKeys()) {
                 this.cooldownTickEvents.put(key, new CooldownTickEvent(cooldownData.getInt(key) - ticksPassed));
             }
+
             this.substitutions = compoundTag.getFloat(SUBSTITUTION_TAG);
+
+            // === Désérialisation du JutsuDeck ===
+            if (compoundTag.contains("JutsuDeck")) {
+                ListTag jutsuList = compoundTag.getList("JutsuDeck", Tag.TAG_STRING);
+                List<Ability> abilities = new ArrayList<>();
+                for (Tag t : jutsuList) {
+                    ResourceLocation loc = new ResourceLocation(t.getAsString());
+                    Ability ability = NarutoRegistries.ABILITIES.getValue(loc);
+                    if (ability != null) {
+                        abilities.add(ability);
+                    }
+                }
+                this.jutsuDeck.setAbilities(abilities);
+            }
         }
     }
+
+
 
     @Nonnull
     @Override

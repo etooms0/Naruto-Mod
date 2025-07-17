@@ -38,6 +38,11 @@ public class BarrierJutsuAbility extends Ability implements Ability.Cooldown {
     }
 
     @Override
+    public int getWeight(){
+        return 1;
+    }
+
+    @Override
     public void performServer(Player player, INinjaData ninjaData, int chargeAmount) {
         if (!(player instanceof ServerPlayer serverPlayer)) return;
         if (ninjaData.getChakra() < 50) return;

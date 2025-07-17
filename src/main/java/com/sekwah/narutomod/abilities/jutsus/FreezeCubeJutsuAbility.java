@@ -36,6 +36,11 @@ public class FreezeCubeJutsuAbility extends Ability implements Ability.Cooldown 
     }
 
     @Override
+    public int getWeight(){
+        return 2;
+    }
+
+    @Override
     public ActivationType activationType() {
         return ActivationType.INSTANT;
     }

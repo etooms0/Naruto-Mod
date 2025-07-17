@@ -24,6 +24,12 @@ public class WaterWalkAbility extends Ability implements Ability.Toggled {
     }
 
     @Override
+    public int getWeight() {
+        return 0;
+    }
+
+
+    @Override
     public long defaultCombo() {
         return 3;
     }

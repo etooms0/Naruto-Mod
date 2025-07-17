@@ -9,9 +9,16 @@ import net.minecraft.world.entity.player.Player;
  */
 public class ChakraChargeAbility extends Ability implements Ability.Channeled {
 
+
+
     @Override
     public ActivationType activationType() {
         return ActivationType.CHANNELED;
+    }
+
+    @Override
+    public int getWeight() {
+        return 0;
     }
 
     @Override

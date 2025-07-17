@@ -19,6 +19,12 @@ public class LeapAbility extends Ability {
     }
 
     @Override
+    public int getWeight() {
+        return 0;
+    }
+
+
+    @Override
     public boolean logInChat() {
         return false;
     }

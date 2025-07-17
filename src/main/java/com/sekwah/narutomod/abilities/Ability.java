@@ -11,6 +11,22 @@ import net.minecraft.world.entity.player.Player;
 
 public abstract class Ability {
 
+    private final JutsuDeck jutsuDeck = new JutsuDeck();
+
+    public JutsuDeck getJutsuDeck() {
+        return jutsuDeck;
+    }
+
+    public void setJutsuDeck(JutsuDeck deck) {
+        this.jutsuDeck.getAbilities().clear();
+        this.jutsuDeck.getAbilities().addAll(deck.getAbilities());
+    }
+
+
+    private int deckpoint = 5;
+
+    public abstract int getWeight();
+
     public Ability() {
     }
 

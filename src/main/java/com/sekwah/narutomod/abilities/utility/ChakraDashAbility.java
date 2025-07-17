@@ -14,6 +14,12 @@ public class ChakraDashAbility extends Ability {
         return ActivationType.TOGGLE;
     }
 
+
+    @Override
+    public int getWeight() {
+        return 0;
+    }
+
     @Override
     public long defaultCombo() {
         return 2;

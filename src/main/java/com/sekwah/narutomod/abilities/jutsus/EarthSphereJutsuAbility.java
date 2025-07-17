@@ -51,6 +51,11 @@ public class EarthSphereJutsuAbility extends Ability implements Ability.Cooldown
         return null;
     }
 
+    @Override
+    public int getWeight(){
+        return 1;
+    }
+
 
     @Override
     public void performServer(Player player, INinjaData ninjaData, int chargeAmount) {
