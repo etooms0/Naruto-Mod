@@ -1,6 +1,7 @@
 package com.sekwah.narutomod.capabilities;
 
 import com.sekwah.narutomod.abilities.Ability;
+import com.sekwah.narutomod.abilities.JutsuDeck;
 import com.sekwah.narutomod.capabilities.toggleabilitydata.ToggleAbilityData;
 import net.minecraft.nbt.Tag;
 import net.minecraft.resources.ResourceLocation;
@@ -56,4 +57,6 @@ public interface INinjaData extends INBTSerializable<Tag> {
     void setIsNinja(boolean enableNinja);
 
     boolean isNinjaModeEnabled();
+
+    JutsuDeck getJutsuDeck();
 }

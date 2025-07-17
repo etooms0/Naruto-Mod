@@ -12,6 +12,23 @@ import java.util.List;
 
 public class JutsuDeck {
 
+    public boolean canDoJutsu(Ability ability) {
+        ResourceLocation abilityKey = NarutoRegistries.ABILITIES.getResourceKey(ability)
+                .map(key -> key.location())
+                .orElse(null);
+        if (abilityKey == null) return false;
+
+        for (Ability selected : selectedAbilities) {
+            ResourceLocation selectedKey = NarutoRegistries.ABILITIES.getResourceKey(selected)
+                    .map(key -> key.location())
+                    .orElse(null);
+            if (abilityKey.equals(selectedKey)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
 
     public void setAbilities(List<Ability> abilities) {
         selectedAbilities.clear();
