@@ -2,13 +2,17 @@ package com.sekwah.narutomod.network.c2s;
 
 import com.sekwah.narutomod.abilities.Ability;
 import com.sekwah.narutomod.capabilities.NinjaCapabilityHandler;
+import com.sekwah.narutomod.network.s2c.ClientSyncJutsuDeckPacket;
 import com.sekwah.narutomod.registries.NarutoRegistries;
+import com.sekwah.narutomod.NarutoMod; // à adapter selon ton mod principal
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.network.NetworkEvent;
+import net.minecraftforge.network.PacketDistributor;
 
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 public class ServerUpdateJutsuDeckPacket {
 
@@ -49,10 +53,20 @@ public class ServerUpdateJutsuDeckPacket {
                         ninjaData.getJutsuDeck().removeAbility(ability);
                     }
 
-                    ninjaData.setDirty(); // ← pour enregistrer la modif
+                    ninjaData.setDirty();
+
+                    // Optionnel : envoi d’un message de confirmation au joueur
+                    player.displayClientMessage(
+                            net.minecraft.network.chat.Component.literal(
+                                    (msg.add ? "Ajouté " : "Retiré ") + ability.getTranslationKey(ninjaData)
+                            ).withStyle(net.minecraft.ChatFormatting.GREEN),
+                            true
+                    );
                 });
             });
             ctx.get().setPacketHandled(true);
         }
     }
+
+
 }

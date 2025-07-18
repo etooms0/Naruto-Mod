@@ -1,6 +1,8 @@
 package com.sekwah.narutomod.client.gui;
 
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.sekwah.narutomod.network.PacketHandler;
+import com.sekwah.narutomod.network.c2s.ServerUpdateJutsuDeckPacket;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.Checkbox;
@@ -27,9 +29,14 @@ public class JutsuDeckScreen extends Screen {
         this.addRenderableWidget(waterBulletCheckbox);
 
         this.addRenderableWidget(Button.builder(Component.literal("Done"), (btn) -> {
-            // TODO : envoyer l'état du jutsu au serveur
+            if (waterBulletCheckbox.selected()) {
+                ResourceLocation waterBulletId = new ResourceLocation("narutomod", "water_bullet");
+                PacketHandler.NARUTO_CHANNEL.sendToServer(new ServerUpdateJutsuDeckPacket(waterBulletId, true));
+            }
             this.minecraft.setScreen(null);
         }).pos(centerX + 50, centerY + 100).size(80, 20).build());
+
+
     }
 
     @Override

@@ -58,5 +58,7 @@ public interface INinjaData extends INBTSerializable<Tag> {
 
     boolean isNinjaModeEnabled();
 
+    void setDirty();
+
     JutsuDeck getJutsuDeck();
 }

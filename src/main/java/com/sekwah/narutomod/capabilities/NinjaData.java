@@ -148,6 +148,16 @@ public class NinjaData implements INinjaData, ICapabilityProvider {
     private static final String SUBSTITUTION_TAG = "substitutions";
 
     private final LazyOptional<INinjaData> holder = LazyOptional.of(() -> this);
+    private boolean dirty = false;
+
+    @Override
+    public void setDirty() {
+        this.dirty = true;
+    }
+
+    public boolean isDirty() {
+        return dirty;
+    }
 
 
     public JutsuDeck getJutsuDeck() {
