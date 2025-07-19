@@ -160,7 +160,7 @@ public class ShadowCloneEntity extends TamableAnimal implements RangedAttackMob 
     @Override
     protected void registerGoals() {
         super.registerGoals();
-        this.goalSelector.addGoal(4, new FollowOwnerGoal(this, 1.2D, 5.0F, 1.0F, false)); // Le clone suit son propriétaire
+        this.goalSelector.addGoal(4, new FollowOwnerGoal(this, 1.2D, 10.0F, 1.0F, false)); // Le clone suit son propriétaire
         this.targetSelector.addGoal(1, new OwnerHurtByTargetGoal(this)); // Défend son propriétaire en attaquant ceux qui l'agressent
         this.targetSelector.addGoal(2, new OwnerHurtTargetGoal(this)); // Attaque automatiquement les cibles du propriétaire
         this.goalSelector.addGoal(3, new MeleeAttackGoal(this, 1.2D, true)); // Frappe l'ennemi avec une attaque directe
