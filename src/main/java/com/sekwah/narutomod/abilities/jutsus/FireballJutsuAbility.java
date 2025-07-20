@@ -4,6 +4,7 @@ import com.sekwah.narutomod.abilities.Ability;
 import com.sekwah.narutomod.capabilities.INinjaData;
 import com.sekwah.narutomod.entity.ItachiEntity;
 import com.sekwah.narutomod.entity.jutsuprojectile.FireballJutsuEntity;
+import com.sekwah.narutomod.registries.NarutoRegistries;
 import com.sekwah.narutomod.sounds.NarutoSounds;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
@@ -30,10 +31,34 @@ public class FireballJutsuAbility extends Ability implements Ability.Cooldown {
 
     @Override
     public boolean handleCost(Player player, INinjaData ninjaData, int chargeAmount) {
-        if(ninjaData.getChakra() < 30) {
-            player.displayClientMessage(Component.translatable("jutsu.fail.notenoughchakra", Component.translatable(this.getTranslationKey(ninjaData)).withStyle(ChatFormatting.YELLOW)), true);
+        // ➊ Récupère l'ID (String) de cette Ability dans ton registre
+        String jutsuId = NarutoRegistries.ABILITIES
+                .getResourceKey(this)
+                .map(r -> r.location().getPath())
+                .orElse("");
+
+        // ➋ Vérifie si le jutsu est dans le deck
+        if (!ninjaData.getSlotData().isEquipped(jutsuId)) {
+            player.displayClientMessage(
+                    Component.literal("Ce jutsu n’est pas dans ton deck !"),
+                    true
+            );
             return false;
         }
+
+        // ➌ Ton code existant pour la chakra
+        if (ninjaData.getChakra() < 30) {
+            player.displayClientMessage(
+                    Component.translatable(
+                            "jutsu.fail.notenoughchakra",
+                            Component.translatable(this.getTranslationKey(ninjaData))
+                                    .withStyle(ChatFormatting.YELLOW)
+                    ),
+                    true
+            );
+            return false;
+        }
+
         ninjaData.useChakra(30, 30);
         return true;
     }

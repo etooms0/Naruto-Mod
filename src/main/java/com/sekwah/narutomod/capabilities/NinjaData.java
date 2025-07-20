@@ -5,11 +5,14 @@ import com.sekwah.narutomod.abilities.Ability;
 import com.sekwah.narutomod.capabilities.toggleabilitydata.ToggleAbilityData;
 import com.sekwah.narutomod.config.NarutoConfig;
 import com.sekwah.narutomod.gameevents.NarutoGameEvents;
+import com.sekwah.narutomod.jutsu.JutsuData;
+import com.sekwah.narutomod.jutsu.JutsuRegistry;
 import com.sekwah.narutomod.registries.NarutoRegistries;
 import com.sekwah.sekclib.capabilitysync.capabilitysync.annotation.Sync;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -26,11 +29,14 @@ import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.function.Consumer;
 
 public class NinjaData implements INinjaData, ICapabilityProvider {
 
     private static final Logger LOGGER = LogUtils.getLogger();
+    private final JutsuSlotData slotData = new JutsuSlotData();
+
 
     @Sync(minTicks = 1)
     private float chakra;
@@ -143,6 +149,12 @@ public class NinjaData implements INinjaData, ICapabilityProvider {
     private static final String SUBSTITUTION_TAG = "substitutions";
 
     private final LazyOptional<INinjaData> holder = LazyOptional.of(() -> this);
+
+
+    @Override
+    public JutsuSlotData getSlotData() {
+        return slotData;
+    }
 
     @Override
     public float getChakra() {
@@ -388,36 +400,88 @@ public class NinjaData implements INinjaData, ICapabilityProvider {
 
     @Override
     public Tag serializeNBT() {
-        final CompoundTag nbt = new CompoundTag();
+        CompoundTag nbt = new CompoundTag();
+
+        // 1) Champs de base
         nbt.putFloat(CHAKRA_TAG, this.chakra);
         nbt.putFloat(STAMINA_TAG, this.stamina);
         nbt.putBoolean(NINJA_MODE_ENABLED, this.ninjaModeEnabled);
+
+        // 2) Timestamp pour calculer les ticks passés
         long currentTime = System.currentTimeMillis();
         nbt.putLong(SAVE_TIME, currentTime);
-        final CompoundTag cooldownData = new CompoundTag();
-        for (String key : this.cooldownTickEvents.keySet()) {
-            CooldownTickEvent event = this.cooldownTickEvents.get(key);
-            cooldownData.putInt(key, event.ticks);
+
+        // 3) Cooldowns
+        CompoundTag cooldownData = new CompoundTag();
+        for (Map.Entry<String, CooldownTickEvent> entry : cooldownTickEvents.entrySet()) {
+            cooldownData.putInt(entry.getKey(), entry.getValue().ticks);
         }
         nbt.put(COOLDOWN_TAG, cooldownData);
+
+        // 4) Substitutions
         nbt.putFloat(SUBSTITUTION_TAG, this.substitutions);
+
+        // 5) Deck de jutsus
+        ListTag list = new ListTag();
+        for (JutsuData jd : slotData.getEquippedJutsus()) {
+            CompoundTag jt = new CompoundTag();
+            jt.putString("id", jd.getId());
+            jt.putInt("cost", jd.getPointCost());
+            list.add(jt);
+        }
+        nbt.put("equippedJutsus", list);
+
         return nbt;
     }
 
     @Override
-    public void deserializeNBT(Tag tag) {
-        if (tag instanceof CompoundTag compoundTag) {
-            long currentTime = System.currentTimeMillis();
-            long saveTime = compoundTag.getLong(SAVE_TIME);
-            int ticksPassed = Math.max((int) ((currentTime - saveTime) / 1000 * 20), 0);
-            this.chakra = compoundTag.getFloat(CHAKRA_TAG);
-            this.stamina = compoundTag.getFloat(STAMINA_TAG);
-            this.ninjaModeEnabled = compoundTag.getBoolean(NINJA_MODE_ENABLED);
-            CompoundTag cooldownData = compoundTag.getCompound(COOLDOWN_TAG);
-            for (String key : cooldownData.getAllKeys()) {
-                this.cooldownTickEvents.put(key, new CooldownTickEvent(cooldownData.getInt(key) - ticksPassed));
+    public void deserializeNBT(Tag tagIn) {
+        // On ne traite que les CompoundTag
+        if (!(tagIn instanceof CompoundTag compoundTag)) {
+            return;
+        }
+
+        // 1) Récupération du temps écoulé pour ajuster les cooldowns
+        long currentTime = System.currentTimeMillis();
+        long saveTime    = compoundTag.getLong(SAVE_TIME);
+        int ticksPassed  = Math.max((int) ((currentTime - saveTime) / 1000 * 20), 0);
+
+        // 2) Chargement des champs existants
+        this.chakra           = compoundTag.getFloat(CHAKRA_TAG);
+        this.stamina          = compoundTag.getFloat(STAMINA_TAG);
+        this.ninjaModeEnabled = compoundTag.getBoolean(NINJA_MODE_ENABLED);
+
+        // 3) Cooldown events
+        CompoundTag cooldownData = compoundTag.getCompound(COOLDOWN_TAG);
+        this.cooldownTickEvents.clear();
+        for (String key : cooldownData.getAllKeys()) {
+            int remaining = cooldownData.getInt(key) - ticksPassed;
+            this.cooldownTickEvents.put(key, new CooldownTickEvent(remaining));
+        }
+
+        // 4) Substitutions
+        this.substitutions = compoundTag.getFloat(SUBSTITUTION_TAG);
+
+        // —————————————————————————————————————————
+        // 5) NOUVEAU : chargement du deck de jutsus
+        // On vide d’abord l’ancien deck
+        this.slotData.clear();
+
+        if (compoundTag.contains("equippedJutsus", Tag.TAG_LIST)) {
+            ListTag list = compoundTag.getList("equippedJutsus", Tag.TAG_COMPOUND);
+
+            for (int i = 0; i < list.size(); i++) {
+                CompoundTag jt = list.getCompound(i);
+                String id  = jt.getString("id");
+                int cost   = jt.getInt("cost");
+
+                // Récupérer la donnée JutsuData correspondante
+                JutsuData data = JutsuRegistry.getById(id);
+                if (data != null && data.getPointCost() == cost) {
+                    // On rééquipe proprement via canEquip / equip
+                    this.slotData.equip(data);
+                }
             }
-            this.substitutions = compoundTag.getFloat(SUBSTITUTION_TAG);
         }
     }
 

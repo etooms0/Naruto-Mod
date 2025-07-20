@@ -32,6 +32,7 @@ public interface INinjaData extends INBTSerializable<Tag> {
     Vec3 getSubstitutionLoc();
     ResourceLocation getSubstitutionDimension();
     void setSubstitutionLoc(Vec3 loc, ResourceLocation dimension);
+    JutsuSlotData getSlotData();
 
     DoubleJumpData getDoubleJumpData();
 

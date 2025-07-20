@@ -7,6 +7,7 @@ import com.sekwah.narutomod.capabilities.NinjaCapabilityHandler;
 import com.sekwah.narutomod.capabilities.NinjaData;
 import com.sekwah.narutomod.client.gui.NarutoInGameGUI;
 import com.sekwah.narutomod.client.keybinds.NarutoKeyHandler;
+import com.sekwah.narutomod.commands.JutsuDeckCommand;
 import com.sekwah.narutomod.config.NarutoConfig;
 import com.sekwah.narutomod.commands.NarutoCommands;
 import com.sekwah.narutomod.entity.NarutoDataSerialisers;
@@ -16,6 +17,7 @@ import com.sekwah.narutomod.gameevents.NarutoGameEvents;
 import com.sekwah.narutomod.item.NarutoCreativeTabs;
 import com.sekwah.narutomod.item.NarutoDispenseItemBehavior;
 import com.sekwah.narutomod.item.NarutoItems;
+import com.sekwah.narutomod.jutsu.JutsuRegistry;
 import com.sekwah.narutomod.network.PacketHandler;
 import com.sekwah.narutomod.registries.NarutoRegistries;
 import com.sekwah.narutomod.sounds.NarutoSounds;
@@ -93,6 +95,7 @@ public class NarutoMod {
     private void setup(FMLCommonSetupEvent event) {
         PacketHandler.init();
         NarutoDispenseItemBehavior.register();
+        JutsuRegistry.registerDefaults();
     }
 
     private void registerCapabilities(RegisterCapabilitiesEvent event) {
@@ -102,7 +105,9 @@ public class NarutoMod {
     @SubscribeEvent
     public static void onServerStarting(RegisterCommandsEvent event) {
         NarutoCommands.register(event.getDispatcher());
+        JutsuDeckCommand.register(event.getDispatcher());
     }
+
 
     public void registerCapabilitySync(RegisterCapabilitySyncEvent event) {
         event.registerPlayerCap(new ResourceLocation(NarutoMod.MOD_ID, "ninja_data"), NinjaCapabilityHandler.NINJA_DATA, NinjaData.class);
