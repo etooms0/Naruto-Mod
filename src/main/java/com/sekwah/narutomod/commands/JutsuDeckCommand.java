@@ -13,6 +13,9 @@ import net.minecraft.server.level.ServerPlayer;
 
 public class JutsuDeckCommand {
 
+    // Limite de points pour le deck
+    private static final int MAX_POINTS = 5;
+
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
         dispatcher.register(
                 Commands.literal("jutsudeck")
@@ -24,7 +27,7 @@ public class JutsuDeckCommand {
                                     player.getCapability(NinjaCapabilityHandler.NINJA_DATA).ifPresent(cap -> {
                                         JutsuSlotData deck = cap.getSlotData();
                                         ctx.getSource().sendSuccess(
-                                                () -> Component.literal("Deck (" + deck.getTotalCost() + "/5)"),
+                                                () -> Component.literal("Deck (" + deck.getTotalCost() + "/" + MAX_POINTS + ")"),
                                                 false
                                         );
                                         deck.getEquippedJutsus().forEach(j -> {
@@ -119,6 +122,21 @@ public class JutsuDeckCommand {
                                         cap.getSlotData().clear();
                                         ctx.getSource().sendSuccess(
                                                 () -> Component.literal("Deck vidé"),
+                                                false
+                                        );
+                                    });
+                                    return 1;
+                                })
+                        )
+
+                        // /jutsudeck points
+                        .then(Commands.literal("points")
+                                .executes(ctx -> {
+                                    ServerPlayer player = ctx.getSource().getPlayerOrException();
+                                    player.getCapability(NinjaCapabilityHandler.NINJA_DATA).ifPresent(cap -> {
+                                        int remaining = MAX_POINTS - cap.getSlotData().getTotalCost();
+                                        ctx.getSource().sendSuccess(
+                                                () -> Component.literal(remaining + "/" + MAX_POINTS),
                                                 false
                                         );
                                     });
