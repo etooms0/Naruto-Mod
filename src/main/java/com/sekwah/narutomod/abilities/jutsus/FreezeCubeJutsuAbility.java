@@ -2,6 +2,7 @@ package com.sekwah.narutomod.abilities.jutsus;
 
 import com.sekwah.narutomod.abilities.Ability;
 import com.sekwah.narutomod.capabilities.INinjaData;
+import com.sekwah.narutomod.registries.NarutoRegistries;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
@@ -24,6 +25,11 @@ public class FreezeCubeJutsuAbility extends Ability implements Ability.Cooldown 
 
     // Stocke la position centrale de chaque cube de glace actif et le temps restant (en ticks).
     private static final Map<BlockPos, Integer> activeFreezeCubes = new HashMap<>();
+
+    @Override
+    public int getPointCost() {
+        return 1000;
+    }
 
     @Override
     public long defaultCombo() {
@@ -149,6 +155,20 @@ public class FreezeCubeJutsuAbility extends Ability implements Ability.Cooldown 
 
     @Override
     public boolean handleCost(Player player, INinjaData ninjaData, int chargeAmount) {
+        // get ID
+        String jutsuId = NarutoRegistries.ABILITIES
+                .getResourceKey(this)
+                .map(r -> r.location().getPath())
+                .orElse("");
+
+        // Verify if jutsu in deck
+        if (!ninjaData.getSlotData().isEquipped(jutsuId)) {
+            player.displayClientMessage(
+                    Component.literal("This jutsu is not in your deck"),
+                    true
+            );
+            return false;
+        }
         int chakraCost = 30;
         if (ninjaData.getChakra() < chakraCost) {
             player.displayClientMessage(Component.translatable("jutsu.fail.notenoughchakra",

@@ -15,6 +15,11 @@ import net.minecraft.world.phys.Vec3;
 public class RinneganSwapAbility extends Ability implements Ability.Cooldown {
 
     @Override
+    public int getPointCost() {
+        return 100;
+    }
+
+    @Override
     public long defaultCombo() {
         return 222; // Ex: C + B + V
     }

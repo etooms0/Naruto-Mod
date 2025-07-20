@@ -23,6 +23,11 @@ public class BarrierJutsuAbility extends Ability implements Ability.Cooldown {
     private static final int radius = 12;
 
     @Override
+    public int getPointCost() {
+        return 100;
+    }
+
+    @Override
     public long defaultCombo() {
         return 333;
     }

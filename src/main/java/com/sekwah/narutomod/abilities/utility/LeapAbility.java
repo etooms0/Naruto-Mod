@@ -14,6 +14,11 @@ import net.minecraft.world.phys.Vec3;
 
 public class LeapAbility extends Ability {
     @Override
+    public int getPointCost() {
+        return 0;
+    }
+
+    @Override
     public ActivationType activationType() {
         return ActivationType.INSTANT;
     }

@@ -15,6 +15,11 @@ public class ChakraDashAbility extends Ability {
     }
 
     @Override
+    public int getPointCost() {
+        return 0;
+    }
+
+    @Override
     public long defaultCombo() {
         return 2;
     }

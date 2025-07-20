@@ -4,6 +4,7 @@ import com.sekwah.narutomod.abilities.Ability;
 import com.sekwah.narutomod.capabilities.INinjaData;
 import com.sekwah.narutomod.entity.NarutoEntities;
 import com.sekwah.narutomod.entity.SusanoEntity;
+import com.sekwah.narutomod.registries.NarutoRegistries;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Player;
@@ -16,12 +17,31 @@ public class SusanoAbility extends Ability implements Ability.Cooldown {
     }
 
     @Override
+    public int getPointCost() {
+        return 100;
+    }
+
+    @Override
     public long defaultCombo() {
         return 3322L;
     }
 
     @Override
     public boolean handleCost(Player player, INinjaData ninjaData, int chargeAmount) {
+        // get ID
+        String jutsuId = NarutoRegistries.ABILITIES
+                .getResourceKey(this)
+                .map(r -> r.location().getPath())
+                .orElse("");
+
+        // Verify if jutsu in deck
+        if (!ninjaData.getSlotData().isEquipped(jutsuId)) {
+            player.displayClientMessage(
+                    Component.literal("This jutsu is not in your deck"),
+                    true
+            );
+            return false;
+        }
         if (ninjaData.getChakra() < 80) {
             player.displayClientMessage(
                     Component.translatable(

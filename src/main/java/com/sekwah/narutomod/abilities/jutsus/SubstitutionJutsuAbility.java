@@ -25,6 +25,11 @@ public class SubstitutionJutsuAbility extends Ability implements Ability.Channel
     }
 
     @Override
+    public int getPointCost() {
+        return 0;
+    }
+
+    @Override
     public long defaultCombo() {
         return 12;
     }

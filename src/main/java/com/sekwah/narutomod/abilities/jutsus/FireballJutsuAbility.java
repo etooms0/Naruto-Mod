@@ -25,28 +25,32 @@ public class FireballJutsuAbility extends Ability implements Ability.Cooldown {
     }
 
     @Override
+    public int getPointCost() {
+        return 1;
+    }
+
+    @Override
     public long defaultCombo() {
         return 121;
     }
 
     @Override
     public boolean handleCost(Player player, INinjaData ninjaData, int chargeAmount) {
-        // ➊ Récupère l'ID (String) de cette Ability dans ton registre
+        // get ID
         String jutsuId = NarutoRegistries.ABILITIES
                 .getResourceKey(this)
                 .map(r -> r.location().getPath())
                 .orElse("");
 
-        // ➋ Vérifie si le jutsu est dans le deck
+        // Verify if jutsu in deck
         if (!ninjaData.getSlotData().isEquipped(jutsuId)) {
             player.displayClientMessage(
-                    Component.literal("Ce jutsu n’est pas dans ton deck !"),
+                    Component.literal("This jutsu is not in your deck"),
                     true
             );
             return false;
         }
 
-        // ➌ Ton code existant pour la chakra
         if (ninjaData.getChakra() < 30) {
             player.displayClientMessage(
                     Component.translatable(

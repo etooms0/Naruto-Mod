@@ -10,6 +10,7 @@ import com.sekwah.narutomod.capabilities.INinjaData;
 import com.sekwah.narutomod.entity.jutsuprojectile.FireballJutsuEntity;
 import com.sekwah.narutomod.network.PacketHandler;
 import com.sekwah.narutomod.network.s2c.SyncCloneProfilePacket;
+import com.sekwah.narutomod.registries.NarutoRegistries;
 import com.sekwah.narutomod.sounds.NarutoSounds;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.particles.ParticleTypes;
@@ -34,6 +35,11 @@ public class ShadowCloneAbility extends Ability implements Ability.Cooldown {
     }
 
     @Override
+    public int getPointCost() {
+        return 1;
+    }
+
+    @Override
     public long defaultCombo() {
         return 1332;
     }
@@ -41,6 +47,20 @@ public class ShadowCloneAbility extends Ability implements Ability.Cooldown {
 
     @Override
     public boolean handleCost(Player player, INinjaData ninjaData, int chargeAmount) {
+        // get ID
+        String jutsuId = NarutoRegistries.ABILITIES
+                .getResourceKey(this)
+                .map(r -> r.location().getPath())
+                .orElse("");
+
+        // Verify if jutsu in deck
+        if (!ninjaData.getSlotData().isEquipped(jutsuId)) {
+            player.displayClientMessage(
+                    Component.literal("This jutsu is not in your deck"),
+                    true
+            );
+            return false;
+        }
         if(ninjaData.getChakra() < 30) {
             player.displayClientMessage(Component.translatable("jutsu.fail.notenoughchakra", Component.translatable(this.getTranslationKey(ninjaData)).withStyle(ChatFormatting.YELLOW)), true);
             return false;

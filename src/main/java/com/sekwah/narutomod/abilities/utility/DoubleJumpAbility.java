@@ -16,6 +16,11 @@ public class DoubleJumpAbility extends Ability {
     public static final float STAMINA_COST = 5f;
 
     @Override
+    public int getPointCost() {
+        return 0;
+    }
+
+    @Override
     public ActivationType activationType() {
         return ActivationType.INSTANT;
     }

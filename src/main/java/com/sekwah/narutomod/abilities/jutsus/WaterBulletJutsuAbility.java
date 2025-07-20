@@ -3,6 +3,7 @@ package com.sekwah.narutomod.abilities.jutsus;
 import com.sekwah.narutomod.abilities.Ability;
 import com.sekwah.narutomod.capabilities.INinjaData;
 import com.sekwah.narutomod.entity.jutsuprojectile.WaterBulletJutsuEntity;
+import com.sekwah.narutomod.registries.NarutoRegistries;
 import com.sekwah.narutomod.sounds.NarutoSounds;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
@@ -21,12 +22,31 @@ public class WaterBulletJutsuAbility extends Ability implements Ability.Cooldown
     }
 
     @Override
+    public int getPointCost() {
+        return 1;
+    }
+
+    @Override
     public long defaultCombo() {
         return 132;
     }
 
     @Override
     public boolean handleCost(Player player, INinjaData ninjaData, int chargeAmount) {
+        // get ID
+        String jutsuId = NarutoRegistries.ABILITIES
+                .getResourceKey(this)
+                .map(r -> r.location().getPath())
+                .orElse("");
+
+        // Verify if jutsu in deck
+        if (!ninjaData.getSlotData().isEquipped(jutsuId)) {
+            player.displayClientMessage(
+                    Component.literal("This jutsu is not in your deck"),
+                    true
+            );
+            return false;
+        }
         if(ninjaData.getChakra() < 30) {
             player.displayClientMessage(Component.translatable("jutsu.fail.notenoughchakra", Component.translatable(this.getTranslationKey(ninjaData)).withStyle(ChatFormatting.YELLOW)), true);
             return false;

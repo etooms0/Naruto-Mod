@@ -11,6 +11,9 @@ import net.minecraft.world.entity.player.Player;
 
 public abstract class Ability {
 
+    public abstract int getPointCost();
+
+
     public Ability() {
     }
 

@@ -4,6 +4,7 @@ import com.sekwah.narutomod.abilities.Ability;
 import com.sekwah.narutomod.capabilities.INinjaData;
 import com.sekwah.narutomod.network.PacketHandler;
 import com.sekwah.narutomod.network.s2c.ClientAttractionPacket;
+import com.sekwah.narutomod.registries.NarutoRegistries;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
@@ -56,6 +57,11 @@ public class EarthSphereLiftJutsuAbility extends Ability implements Ability.Cool
 
 
     private static final List<AttractorData> activeAttractors = new ArrayList<>();
+
+    @Override
+    public int getPointCost() {
+        return 3;
+    }
 
     @Override
     public long defaultCombo() {
@@ -365,6 +371,20 @@ public class EarthSphereLiftJutsuAbility extends Ability implements Ability.Cool
 
     @Override
     public boolean handleCost(Player player, INinjaData ninjaData, int chargeAmount) {
+        // get ID
+        String jutsuId = NarutoRegistries.ABILITIES
+                .getResourceKey(this)
+                .map(r -> r.location().getPath())
+                .orElse("");
+
+        // Verify if jutsu in deck
+        if (!ninjaData.getSlotData().isEquipped(jutsuId)) {
+            player.displayClientMessage(
+                    Component.literal("This jutsu is not in your deck"),
+                    true
+            );
+            return false;
+        }
         int chakraCost = 100;
         if (ninjaData.getChakra() < chakraCost) {
             player.displayClientMessage(

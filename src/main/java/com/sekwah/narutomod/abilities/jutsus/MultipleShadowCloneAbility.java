@@ -7,6 +7,7 @@ import com.sekwah.narutomod.entity.NarutoEntities;
 import com.sekwah.narutomod.entity.ShadowCloneEntity;
 import com.sekwah.narutomod.network.PacketHandler;
 import com.sekwah.narutomod.network.s2c.SyncCloneProfilePacket;
+import com.sekwah.narutomod.registries.NarutoRegistries;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.chat.Component;
@@ -28,12 +29,33 @@ public class MultipleShadowCloneAbility extends Ability implements Ability.Coold
     }
 
     @Override
+    public int getPointCost() {
+        return 3;
+    }
+
+    @Override
     public long defaultCombo() {
         return 1332312;
     }
 
+
+
     @Override
     public boolean handleCost(Player player, INinjaData ninjaData, int chargeAmount) {
+        // get ID
+        String jutsuId = NarutoRegistries.ABILITIES
+                .getResourceKey(this)
+                .map(r -> r.location().getPath())
+                .orElse("");
+
+        // Verify if jutsu in deck
+        if (!ninjaData.getSlotData().isEquipped(jutsuId)) {
+            player.displayClientMessage(
+                    Component.literal("This jutsu is not in your deck"),
+                    true
+            );
+            return false;
+        }
         if(ninjaData.getChakra() < 30) {
             player.displayClientMessage(Component.translatable("jutsu.fail.notenoughchakra", Component.translatable(this.getTranslationKey(ninjaData)).withStyle(ChatFormatting.YELLOW)), true);
             return false;
