@@ -67,6 +67,10 @@ public class NarutoAbilities {
 
     public static final RegistryObject<SubstitutionJutsuAbility> SUBSTITUTION = ABILITY.register("substitution", SubstitutionJutsuAbility::new);
 
+    public static final RegistryObject<ByakuganAbility> BYAKUGAN = ABILITY.register("byakugan", ByakuganAbility::new);
+
+    public static final RegistryObject<SharinganAbility> SHARINGAN = ABILITY.register("sharingan", SharinganAbility::new);
+
     public static void register(IEventBus eventBus) {
         ABILITY.register(eventBus);
     }
