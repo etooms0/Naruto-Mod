@@ -53,7 +53,7 @@ public class JutsuDeckCommand {
                                             JutsuData data = JutsuRegistry.getById(id);
                                             if (data == null) {
                                                 ctx.getSource().sendFailure(
-                                                        Component.literal("Jutsu inconnu : " + id)
+                                                        Component.literal("Unknown jutsu : " + id)
                                                 );
                                                 return 0;
                                             }
@@ -61,14 +61,14 @@ public class JutsuDeckCommand {
                                             return player.getCapability(NinjaCapabilityHandler.NINJA_DATA).map(cap -> {
                                                 if (cap.getSlotData().equip(data)) {
                                                     ctx.getSource().sendSuccess(
-                                                            () -> Component.literal("Ajouté : ")
+                                                            () -> Component.literal("Addeed : ")
                                                                     .append(data.getDisplayName()),
                                                             false
                                                     );
                                                     return 1;
                                                 } else {
                                                     ctx.getSource().sendFailure(
-                                                            Component.literal("Impossible d’équiper : ")
+                                                            Component.literal("Impossible to equip : ")
                                                                     .append(data.getDisplayName())
                                                     );
                                                     return 0;
@@ -88,7 +88,7 @@ public class JutsuDeckCommand {
                                             JutsuData data = JutsuRegistry.getById(id);
                                             if (data == null) {
                                                 ctx.getSource().sendFailure(
-                                                        Component.literal("Jutsu inconnu : " + id)
+                                                        Component.literal("Unknown Jutsu : " + id)
                                                 );
                                                 return 0;
                                             }
@@ -96,7 +96,7 @@ public class JutsuDeckCommand {
                                             return player.getCapability(NinjaCapabilityHandler.NINJA_DATA).map(cap -> {
                                                 if (cap.getSlotData().remove(data)) {
                                                     ctx.getSource().sendSuccess(
-                                                            () -> Component.literal("Retiré : ")
+                                                            () -> Component.literal("Removed")
                                                                     .append(data.getDisplayName()),
                                                             false
                                                     );
@@ -105,7 +105,7 @@ public class JutsuDeckCommand {
                                                     ctx.getSource().sendFailure(
                                                             Component.literal("")
                                                                     .append(data.getDisplayName())
-                                                                    .append(Component.literal(" n’était pas équipé"))
+                                                                    .append(Component.literal(" was not equiped"))
                                                     );
                                                     return 0;
                                                 }
@@ -121,7 +121,7 @@ public class JutsuDeckCommand {
                                     player.getCapability(NinjaCapabilityHandler.NINJA_DATA).ifPresent(cap -> {
                                         cap.getSlotData().clear();
                                         ctx.getSource().sendSuccess(
-                                                () -> Component.literal("Deck vidé"),
+                                                () -> Component.literal("Emptied deck"),
                                                 false
                                         );
                                     });
@@ -148,7 +148,7 @@ public class JutsuDeckCommand {
                         .then(Commands.literal("all")
                                 .executes(ctx -> {
                                     ctx.getSource().sendSuccess(
-                                            () -> Component.literal("Tous les jutsus disponibles :"),
+                                            () -> Component.literal("Available jutsus :"),
                                             false
                                     );
                                     for (JutsuData j : JutsuRegistry.getAll()) {

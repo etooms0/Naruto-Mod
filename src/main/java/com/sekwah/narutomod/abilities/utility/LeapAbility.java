@@ -44,11 +44,11 @@ public class LeapAbility extends Ability {
             player.displayClientMessage(Component.translatable("jutsu.fail.notonground", Component.translatable("jutsu.leap").withStyle(ChatFormatting.YELLOW)), true);
             return false;
         }
-        if(ninjaData.getStamina() < 10) {
+        if(ninjaData.getStamina() < 50) {
             player.displayClientMessage(Component.translatable("jutsu.fail.notenoughstamina", Component.translatable("jutsu.leap").withStyle(ChatFormatting.YELLOW)), true);
             return false;
         }
-        ninjaData.useStamina(10, 40);
+        ninjaData.useStamina(50, 40);
         return true;
     }
 
