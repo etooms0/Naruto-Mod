@@ -11,35 +11,50 @@ import net.minecraft.world.level.Level;
 
 public class ExplosiveKunaiItem extends KunaiItem {
 
+    // Cooldown en ticks (10 ticks = 0.5 seconde)
+    private static final int COOLDOWN_TICKS = 20*5;
+
     public ExplosiveKunaiItem(Properties properties) {
         super(properties);
     }
 
     @Override
-    public AbstractArrow createShootingEntity(Level worldIn, Player playerIn) {
-        return new ExplosiveKunaiEntity(worldIn, playerIn);
+    public AbstractArrow createShootingEntity(Level world, Player shooter) {
+        return new ExplosiveKunaiEntity(world, shooter);
     }
 
     @Override
     public boolean hurtEnemy(ItemStack stack, LivingEntity target, LivingEntity attacker) {
-
-        if (!(attacker instanceof Player) || !((Player) attacker).getAbilities().instabuild) {
-            stack.shrink(1);
-        }
-
-        if(!attacker.level().isClientSide) {
+        // Applique l'explosion à l'impact
+        if (!attacker.level().isClientSide) {
             ExplosiveKunaiEntity.explodeKunai(attacker);
         }
 
-        return false;
+        // Si on n'est pas en créatif, on consomme l'item
+        if (!(attacker instanceof Player p && p.getAbilities().instabuild)) {
+            stack.shrink(1);
+        }
+
+        return true;
     }
 
     @Override
-    public InteractionResultHolder<ItemStack> use(Level worldIn, Player playerIn, InteractionHand handIn) {
-        InteractionResultHolder<ItemStack> action = super.use(worldIn, playerIn, handIn);
-        playerIn.getCooldowns().addCooldown(this, 10);
+    public InteractionResultHolder<ItemStack> use(Level world, Player player, InteractionHand hand) {
+        ItemStack stack = player.getItemInHand(hand);
 
-        return action;
+        // ➊ Bloquer si en cooldown
+        if (player.getCooldowns().isOnCooldown(this)) {
+            return InteractionResultHolder.fail(stack);
+        }
+
+        // ➋ Lancer le projectile
+        InteractionResultHolder<ItemStack> result = super.use(world, player, hand);
+
+        // ➌ Si efficace, démarrer le cooldown
+        if (result.getResult().consumesAction() && !world.isClientSide) {
+            player.getCooldowns().addCooldown(this, COOLDOWN_TICKS);
+        }
+
+        return result;
     }
-
 }

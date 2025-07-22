@@ -13,42 +13,63 @@ import net.minecraft.world.level.Level;
 
 public class ShurikenItem extends Item {
 
+    // Cooldown en ticks (10 ticks = 0.5 seconde)
+    private static final int COOLDOWN_TICKS = 20*1;
+
     public ShurikenItem(Properties properties) {
         super(properties);
     }
 
     @Override
-    public InteractionResultHolder<ItemStack> use(Level worldIn, Player playerIn, InteractionHand handIn) {
-        ItemStack usedItem = playerIn.getItemInHand(handIn);
-        playerIn.getCooldowns().addCooldown(this, 10);
+    public InteractionResultHolder<ItemStack> use(Level world, Player player, InteractionHand hand) {
+        ItemStack stack = player.getItemInHand(hand);
 
-        worldIn.playSound(null, playerIn.getX(), playerIn.getY(), playerIn.getZ(), SoundEvents.ARROW_SHOOT, SoundSource.PLAYERS, 1.0F, 1.0F / (worldIn.getRandom().nextFloat() * 0.4F + 1.2F) + 0.5F);
-        if (!worldIn.isClientSide) {
-            AbstractArrow kunaiEntity = createShootingEntity(worldIn, playerIn);
-
-            kunaiEntity.shootFromRotation(playerIn, playerIn.getXRot(), playerIn.getYRot(), 0.0F, 3.0F, 1.0F);
-            kunaiEntity.setBaseDamage(2.5);
-
-            worldIn.addFreshEntity(kunaiEntity);
+        // ➊ Si l'objet est en cooldown, on bloque l'utilisation
+        if (player.getCooldowns().isOnCooldown(this)) {
+            return InteractionResultHolder.fail(stack);
         }
 
+        // ➋ Démarre le cooldown
+        player.getCooldowns().addCooldown(this, COOLDOWN_TICKS);
 
-        if (!playerIn.getAbilities().instabuild) {
-            usedItem.shrink(1);
+        // ➌ Son de tir
+        world.playSound(
+                null,
+                player.getX(), player.getY(), player.getZ(),
+                SoundEvents.ARROW_SHOOT,
+                SoundSource.PLAYERS,
+                1.0F,
+                1.0F / (world.getRandom().nextFloat() * 0.4F + 1.2F) + 0.5F
+        );
+
+        // ➍ Création et lancement du projectile
+        if (!world.isClientSide) {
+            AbstractArrow shuriken = createShootingEntity(world, player);
+            shuriken.shootFromRotation(
+                    player,
+                    player.getXRot(),
+                    player.getYRot(),
+                    0.0F,
+                    3.0F,
+                    1.0F
+            );
+            shuriken.setBaseDamage(2.5D);
+            world.addFreshEntity(shuriken);
         }
 
-        return InteractionResultHolder.sidedSuccess(usedItem, worldIn.isClientSide);
+        // ➎ Consommation de l'item si non créatif
+        if (!player.getAbilities().instabuild) {
+            stack.shrink(1);
+        }
 
+        return InteractionResultHolder.sidedSuccess(stack, world.isClientSide);
     }
 
-    public AbstractArrow createShootingEntity(Level worldIn, Player playerIn) {
-
-        ShurikenEntity entity = new ShurikenEntity(worldIn, playerIn);
-
-        entity.pickup = playerIn.getAbilities().instabuild ?
-                AbstractArrow.Pickup.CREATIVE_ONLY: AbstractArrow.Pickup.ALLOWED;
-
+    public AbstractArrow createShootingEntity(Level world, Player player) {
+        ShurikenEntity entity = new ShurikenEntity(world, player);
+        entity.pickup = player.getAbilities().instabuild
+                ? AbstractArrow.Pickup.CREATIVE_ONLY
+                : AbstractArrow.Pickup.ALLOWED;
         return entity;
     }
-
 }

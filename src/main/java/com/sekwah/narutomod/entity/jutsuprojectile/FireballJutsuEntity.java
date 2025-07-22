@@ -113,8 +113,8 @@ public class FireballJutsuEntity extends AbstractHurtingProjectile {
 
         if (!this.level().isClientSide) {
 
-            int flameRadius = isItachi ? 12 : 8; // plus grand pour Itachi
-            float baseDamage = isItachi ? 12f : 6f; // plus de dégâts pour Itachi
+            int flameRadius = isItachi ? 15 : 8; // plus grand pour Itachi
+            float baseDamage = isItachi ? 16f : 12f; // plus de dégâts pour Itachi
 
             this.level().getEntities(this, this.getBoundingBox().inflate(flameRadius, flameRadius, flameRadius)).forEach(entity -> {
                 if (entity == this.getOwner()) {
