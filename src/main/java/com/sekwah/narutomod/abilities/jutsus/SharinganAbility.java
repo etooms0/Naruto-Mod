@@ -19,7 +19,7 @@ public class SharinganAbility extends Ability implements Ability.Cooldown {
     private static final int POINT_COST        = 1000;
     private static final long DEFAULT_COMBO    = 221L;
     private static final int COOLDOWN_TICKS    = 30 * 20;   // 30 s
-    private static final int DURATION_TICKS    = 2 * 20;    // 2 s
+    private static final int DURATION_TICKS    = 3 * 20;    // 2 s
     private static final double RANGE          = 50.0;      // look range
 
     @Override

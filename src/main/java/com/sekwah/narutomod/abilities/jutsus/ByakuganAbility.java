@@ -70,7 +70,7 @@ public class ByakuganAbility extends Ability implements Ability.Cooldown {
         List<LivingEntity> targets = level.getEntitiesOfClass(
                 LivingEntity.class,
                 box,
-                e -> !(e instanceof ServerPlayer)
+                e -> e != player        // on exclut seulement soi-même
         );
 
         // ➌ Applique le Glow et affiche la santé
