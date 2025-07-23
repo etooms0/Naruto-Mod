@@ -71,6 +71,8 @@ public class NarutoAbilities {
 
     public static final RegistryObject<SharinganAbility> SHARINGAN = ABILITY.register("sharingan", SharinganAbility::new);
 
+    public static final RegistryObject<EarthWallAbility> EARTH_WALL = ABILITY.register("earth_wall", EarthWallAbility::new);
+
     public static void register(IEventBus eventBus) {
         ABILITY.register(eventBus);
     }
