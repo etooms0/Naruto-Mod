@@ -171,11 +171,8 @@ public class KatonAbility extends Ability implements Ability.Cooldown, Ability.C
 
             for (LivingEntity target : targets) {
                 // dégâts manuels
-                float newHp = Math.max(target.getHealth() - DAMAGE_PER_HIT, 0);
-                target.setHealth(newHp);
-                if (newHp <= 0) {
-                    target.remove(RemovalReason.KILLED);
-                }
+                target.hurt(player.damageSources().playerAttack(player), DAMAGE_PER_HIT);
+                
                 target.setSecondsOnFire(8);
 
                 // recul
