@@ -17,33 +17,30 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import net.minecraft.core.BlockPos;
 
 import java.util.List;
 
 public class KatonAbility extends Ability implements Ability.Cooldown, Ability.Channeled {
 
-    private static final int POINT_COST         = 5;
-    private static final long DEFAULT_COMBO      = 23231L;
-    private static final int DURATION_TICKS     = 5 * 20;    // 5 secondes
-    private static final int COOLDOWN_TICKS     = 12 * 20;   // 12 secondes
-    private static final int DAMAGE_INTERVAL    = 4;         // dégâts toutes les 4 ticks
-    private static final float RANGE            = 12.0F;     // portée max
-    private static final int PARTICLES_PER_TICK = 5;         // nombre de particules par tick
-    private static final double CONSUME_INTERVAL = 2;        // 1 chakra consommé toutes les 2 ticks
-    private static final float DAMAGE_PER_HIT   = 1.5F;      // PV retirés à chaque hit
+    private static final int POINT_COST = 1;
+    private static final long DEFAULT_COMBO = 1121L;
+    private static final int DURATION_TICKS = 5 * 20;
+    private static final int COOLDOWN_TICKS = 12 * 20;
+    private static final int DAMAGE_INTERVAL = 4;
+    private static final float RANGE = 12.0F;
+    private static final int PARTICLES_PER_TICK = 15;
+    private static final double CONSUME_INTERVAL = 2;
+    private static final float DAMAGE_PER_HIT = 1.5F;
+    private static final double GROUND_BURN_INTERVAL = 5;
 
     @Override
     public ActivationType activationType() {
         return ActivationType.CHANNELED;
     }
-
-    @Override
-    public void performServer(Player player, INinjaData data, int useCount) {
-        handleChannelling(player, data, useCount);
-    }
-
 
     @Override
     public long defaultCombo() {
@@ -62,14 +59,13 @@ public class KatonAbility extends Ability implements Ability.Cooldown, Ability.C
 
     @Override
     public boolean handleCost(Player player, INinjaData data, int charge) {
-        // Vérifie que le jutsu est équipé dans le deck
         String id = NarutoRegistries.ABILITIES
                 .getResourceKey(this)
                 .map(r -> r.location().getPath())
                 .orElse("");
         if (!data.getSlotData().isEquipped(id)) {
             player.displayClientMessage(
-                    Component.literal("Jutsu non équipé dans votre deck")
+                    Component.literal("this ability is not in your deck")
                             .withStyle(ChatFormatting.RED),
                     true
             );
@@ -78,24 +74,25 @@ public class KatonAbility extends Ability implements Ability.Cooldown, Ability.C
         return true;
     }
 
-    // Démarre la canalisation
     public InteractionResultHolder<ItemStack> use(Level world, Player player, InteractionHand hand) {
         player.startUsingItem(hand);
         return InteractionResultHolder.consume(player.getItemInHand(hand));
     }
 
-    // Durée de canalisation
     public int getUseDuration(ItemStack stack) {
         return DURATION_TICKS;
     }
 
-    // Tick côté serveur à chaque moment de canalisation
+    @Override
+    public void performServer(Player player, INinjaData data, int useCount) {
+        handleChannelling(player, data, useCount);
+    }
+
     @Override
     public void handleChannelling(Player player, INinjaData data, int ticksChanneled) {
-        Level level = player.level();
-        if (!(level instanceof ServerLevel serverLevel)) return;
+        if (!(player.level() instanceof ServerLevel serverLevel)) return;
 
-        // consommation lente de chakra
+        // consommation de chakra
         if (ticksChanneled % CONSUME_INTERVAL == 0) {
             data.useChakra(1, 1);
             if (data.getChakra() <= 0) {
@@ -104,53 +101,89 @@ public class KatonAbility extends Ability implements Ability.Cooldown, Ability.C
             }
         }
 
-        // position de départ et direction
         Vec3 origin = player.getEyePosition(1.0F);
-        Vec3 dir    = player.getLookAngle().normalize();
-        // fraction de progression de 0→1
+        Vec3 dir = player.getLookAngle().normalize();
         double progress = ticksChanneled / (double) DURATION_TICKS;
-        Vec3 startPos = origin.add(dir.scale(0.5 + progress * RANGE));
+        Vec3 jetBase = origin.add(dir.scale(0.5 + progress * RANGE));
 
-        // particules en “jet de flammes”
+        // son de feu et résistance au démarrage
+        if (ticksChanneled == 0) {
+            serverLevel.playSound(
+                    null, origin.x, origin.y, origin.z,
+                    SoundEvents.FIRE_AMBIENT,
+                    SoundSource.PLAYERS, 2.0F, 1.0F
+            );
+            if (player instanceof ServerPlayer sp) {
+                sp.addEffect(new net.minecraft.world.effect.MobEffectInstance(
+                        net.minecraft.world.effect.MobEffects.FIRE_RESISTANCE,
+                        DURATION_TICKS, 0, false, false
+                ));
+            }
+        }
+
+        // particules massives
         for (int i = 0; i < PARTICLES_PER_TICK; i++) {
-            double spread = 0.1;
-            Vec3 offset = dir
-                    .add((serverLevel.random.nextDouble() - 0.5) * spread,
-                            (serverLevel.random.nextDouble() - 0.5) * spread,
-                            (serverLevel.random.nextDouble() - 0.5) * spread)
-                    .normalize();
+            double spread = 0.2;
+            Vec3 offset = dir.add(
+                    (serverLevel.random.nextDouble() - 0.5) * spread,
+                    (serverLevel.random.nextDouble() - 0.5) * spread,
+                    (serverLevel.random.nextDouble() - 0.5) * spread
+            ).normalize();
 
-            double px = startPos.x, py = startPos.y, pz = startPos.z;
-            double vx = offset.x * 0.2, vy = offset.y * 0.2, vz = offset.z * 0.2;
+            Vec3 p = jetBase.add(offset.scale(serverLevel.random.nextDouble() * 0.5));
 
             serverLevel.sendParticles(
                     ParticleTypes.FLAME,
-                    px, py, pz,
-                    1, vx, vy, vz, 0.01
+                    p.x, p.y, p.z,
+                    1, offset.x * 0.3, offset.y * 0.3, offset.z * 0.3, 0.02
+            );
+            serverLevel.sendParticles(
+                    ParticleTypes.LAVA,
+                    p.x, p.y, p.z,
+                    1, 0, -0.05, 0, 0.01
             );
             serverLevel.sendParticles(
                     ParticleTypes.SMOKE,
-                    px, py, pz,
-                    1, vx * 0.5, vy * 0.5, vz * 0.5, 0.005
+                    p.x, p.y, p.z,
+                    1, offset.x * 0.1, offset.y * 0.1, offset.z * 0.1, 0.005
             );
         }
 
-        // dégâts, embrasement et recul toutes les DAMAGE_INTERVAL ticks
+        // brûle le sol
+        if (ticksChanneled % GROUND_BURN_INTERVAL == 0) {
+            BlockPos flamePos = new BlockPos((int) jetBase.x, (int) jetBase.y, (int) jetBase.z);
+            BlockPos ground = flamePos.below();
+
+            if (serverLevel.isEmptyBlock(flamePos)
+                    && !serverLevel.isEmptyBlock(ground)) {
+                serverLevel.setBlock(flamePos, Blocks.FIRE.defaultBlockState(), 3);
+            }
+        }
+
+        // dégâts & ignition
         if (ticksChanneled % DAMAGE_INTERVAL == 0) {
             Vec3 hitPoint = origin.add(dir.scale(progress * RANGE));
-            AABB zone = new AABB(hitPoint, hitPoint).inflate(0.75);
+            AABB zone = new AABB(hitPoint, hitPoint).inflate(1.0);
             List<LivingEntity> targets = serverLevel.getEntitiesOfClass(
-                    LivingEntity.class,
-                    zone,
+                    LivingEntity.class, zone,
                     e -> e != player && e.isAlive()
             );
+
             for (LivingEntity target : targets) {
+                // dégâts manuels
                 float newHp = Math.max(target.getHealth() - DAMAGE_PER_HIT, 0);
                 target.setHealth(newHp);
                 if (newHp <= 0) {
                     target.remove(RemovalReason.KILLED);
                 }
-                target.setSecondsOnFire(3);
+                target.setSecondsOnFire(8);
+
+                // recul
+                Vec3 kb = target.position()
+                        .subtract(player.position())
+                        .normalize()
+                        .scale(0.3);
+                target.push(kb.x, 0.2, kb.z);
             }
         }
     }
