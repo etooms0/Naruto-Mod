@@ -32,23 +32,23 @@ import java.util.HashSet;
 
 public class KatonAbility extends Ability implements Ability.Cooldown, Ability.Channeled {
 
-    // Configuration constants - Plus équilibrées
+    // Configuration constants - Enhanced for more power
     private static final int POINT_COST = 1;
     private static final long DEFAULT_COMBO = 1121L;
-    private static final int DURATION_TICKS = 6 * 20; // 6 secondes
-    private static final int COOLDOWN_TICKS = 15 * 20; // 15 secondes
-    private static final int DAMAGE_INTERVAL = 8; // Moins de spam de dégâts
-    private static final float BASE_RANGE = 8.0F;
-    private static final float MAX_RANGE = 16.0F;
-    private static final int PARTICLES_PER_TICK = 25; // Plus de particules
+    private static final int DURATION_TICKS = 6 * 20; // 6 seconds
+    private static final int COOLDOWN_TICKS = 15 * 20; // 15 seconds
+    private static final int DAMAGE_INTERVAL = 6; // More frequent damage
+    private static final float BASE_RANGE = 10.0F; // Increased base range
+    private static final float MAX_RANGE = 20.0F; // Increased max range
+    private static final int PARTICLES_PER_TICK = 40; // More particles for enhanced effect
     private static final double CHAKRA_CONSUME_INTERVAL = 3;
     private static final int CHAKRA_COST_PER_TICK = 2;
-    private static final float BASE_DAMAGE = 2.0F;
-    private static final float MAX_DAMAGE = 4.0F;
-    private static final double GROUND_BURN_INTERVAL = 8;
-    private static final double BLOCK_MELT_CHANCE = 0.3;
+    private static final float BASE_DAMAGE = 3.5F; // Increased base damage
+    private static final float MAX_DAMAGE = 7.0F; // Increased max damage
+    private static final double GROUND_BURN_INTERVAL = 6; // More frequent ground burning
+    private static final double BLOCK_MELT_CHANCE = 0.5; // Higher melt chance
 
-    // Tracking des entités touchées pour éviter le spam de dégâts
+    // Track damaged entities to prevent damage spam
     private final Set<Integer> damagedEntities = new HashSet<>();
 
     @Override
@@ -78,22 +78,22 @@ public class KatonAbility extends Ability implements Ability.Cooldown, Ability.C
                 .map(r -> r.location().getPath())
                 .orElse("");
 
-        // Vérification stricte de l'équipement - bloque TOUT si pas équipé
+        // Strict equipment check - blocks EVERYTHING if not equipped
         if (!data.getSlotData().isEquipped(id)) {
             player.displayClientMessage(
                     Component.literal("This jutsu is not in your deck!")
                             .withStyle(ChatFormatting.RED),
                     true
             );
-            // Arrêter immédiatement l'utilisation si elle a commencé
+            // Stop usage immediately if it has started
             player.stopUsingItem();
             return false;
         }
 
-        // Vérification du chakra minimum requis
+        // Check minimum required chakra
         if (data.getChakra() < CHAKRA_COST_PER_TICK * 3) {
             player.displayClientMessage(
-                    Component.literal("Not enough chakra")
+                    Component.literal("Not enough chakra!")
                             .withStyle(ChatFormatting.BLUE),
                     true
             );
@@ -118,7 +118,7 @@ public class KatonAbility extends Ability implements Ability.Cooldown, Ability.C
     public void handleChannelling(Player player, INinjaData data, int ticksChanneled) {
         if (!(player.level() instanceof ServerLevel serverLevel)) return;
 
-        // Consommation progressive de chakra
+        // Progressive chakra consumption
         if (ticksChanneled % CHAKRA_CONSUME_INTERVAL == 0) {
             int chakraCost = calculateChakraCost(ticksChanneled);
             data.useChakra(chakraCost, chakraCost);
@@ -126,7 +126,7 @@ public class KatonAbility extends Ability implements Ability.Cooldown, Ability.C
             if (data.getChakra() <= 0) {
                 player.stopUsingItem();
                 player.displayClientMessage(
-                        Component.literal("No chakra")
+                        Component.literal("Out of chakra!")
                                 .withStyle(ChatFormatting.BLUE),
                         true
                 );
@@ -134,7 +134,7 @@ public class KatonAbility extends Ability implements Ability.Cooldown, Ability.C
             }
         }
 
-        // Calculs dynamiques basés sur la progression
+        // Dynamic calculations based on progression
         double progress = Math.min(ticksChanneled / (double) DURATION_TICKS, 1.0);
         float currentRange = BASE_RANGE + (MAX_RANGE - BASE_RANGE) * (float) progress;
         float currentDamage = BASE_DAMAGE + (MAX_DAMAGE - BASE_DAMAGE) * (float) progress;
@@ -142,112 +142,113 @@ public class KatonAbility extends Ability implements Ability.Cooldown, Ability.C
         Vec3 origin = player.getEyePosition(1.0F);
         Vec3 direction = player.getLookAngle().normalize();
 
-        // Effets de démarrage améliorés
         if (ticksChanneled == 0) {
             initializeFireJutsu(serverLevel, player, origin);
         }
 
-        // Génération de particules améliorées
-        generateFireParticles(serverLevel, origin, direction, currentRange, progress);
+        generateEnhancedFireParticles(serverLevel, origin, direction, currentRange, progress);
 
-        // Effets environnementaux améliorés
         if (ticksChanneled % GROUND_BURN_INTERVAL == 0) {
             createEnvironmentalEffects(serverLevel, origin, direction, currentRange);
         }
 
-        // Système de dégâts amélioré
         if (ticksChanneled % DAMAGE_INTERVAL == 0) {
-            applyFireDamage(serverLevel, player, origin, direction, currentRange, currentDamage);
+            applyEnhancedFireDamage(serverLevel, player, origin, direction, currentRange, currentDamage);
         }
 
-        // Effets sonores continus
-        if (ticksChanneled % 20 == 0) {
+        // Enhanced sound effects
+        if (ticksChanneled % 15 == 0) {
             serverLevel.playSound(
                     null, origin.x, origin.y, origin.z,
                     SoundEvents.FIRECHARGE_USE,
-                    SoundSource.PLAYERS, 1.5F, 0.8F + (float) progress * 0.4F
+                    SoundSource.PLAYERS, 2.0F, 0.7F + (float) progress * 0.5F
             );
         }
     }
 
     private int calculateChakraCost(int ticksChanneled) {
-        // Coût progressif : plus on maintient, plus ça coûte cher
         double progressFactor = Math.min(ticksChanneled / (double) DURATION_TICKS, 1.0);
         return CHAKRA_COST_PER_TICK + (int) (progressFactor * 2);
     }
 
     private void initializeFireJutsu(ServerLevel serverLevel, Player player, Vec3 origin) {
-        // Sons plus dramatiques
+        // Enhanced initialization sounds
         serverLevel.playSound(
                 null, origin.x, origin.y, origin.z,
                 SoundEvents.FIRE_AMBIENT,
-                SoundSource.PLAYERS, 3.0F, 0.7F
+                SoundSource.PLAYERS, 4.0F, 0.6F
         );
 
         serverLevel.playSound(
                 null, origin.x, origin.y, origin.z,
                 SoundEvents.BLAZE_SHOOT,
-                SoundSource.PLAYERS, 2.0F, 1.2F
+                SoundSource.PLAYERS, 3.0F, 1.0F
         );
 
-        // Résistance au feu + effets bonus
         if (player instanceof ServerPlayer sp) {
             sp.addEffect(new MobEffectInstance(
                     MobEffects.FIRE_RESISTANCE,
                     DURATION_TICKS + 60, 0, false, false
             ));
 
-            // Bonus de vitesse temporaire pour l'immersion
             sp.addEffect(new MobEffectInstance(
                     MobEffects.MOVEMENT_SPEED,
-                    40, 0, false, false
+                    40, 1, false, false // Enhanced speed boost
             ));
         }
 
-        // Explosion de particules initiale
-        for (int i = 0; i < 50; i++) {
+        // Enhanced initialization particle burst
+        for (int i = 0; i < 80; i++) {
             Vec3 randomOffset = new Vec3(
-                    (serverLevel.random.nextDouble() - 0.5) * 2,
-                    (serverLevel.random.nextDouble() - 0.5) * 2,
-                    (serverLevel.random.nextDouble() - 0.5) * 2
+                    (serverLevel.random.nextDouble() - 0.5) * 2.5,
+                    (serverLevel.random.nextDouble() - 0.5) * 2.5,
+                    (serverLevel.random.nextDouble() - 0.5) * 2.5
             );
 
             Vec3 particlePos = origin.add(randomOffset);
             serverLevel.sendParticles(
                     ParticleTypes.FLAME,
                     particlePos.x, particlePos.y, particlePos.z,
-                    1, randomOffset.x * 0.2, randomOffset.y * 0.2, randomOffset.z * 0.2, 0.1
+                    2, randomOffset.x * 0.3, randomOffset.y * 0.3, randomOffset.z * 0.3, 0.15
             );
         }
     }
 
-    private void generateFireParticles(ServerLevel serverLevel, Vec3 origin, Vec3 direction, float range, double progress) {
-        int particleCount = PARTICLES_PER_TICK + (int) (progress * 15);
+    private void generateEnhancedFireParticles(ServerLevel serverLevel, Vec3 origin, Vec3 direction, float range, double progress) {
+        int particleCount = PARTICLES_PER_TICK + (int) (progress * 25); // More particles with progression
 
-        // Effet lance-flammes avec dispersion progressive
         for (int i = 0; i < particleCount; i++) {
-            // Distance avec distribution favorisant le début du jet
-            double distanceRatio = Math.pow(serverLevel.random.nextDouble(), 0.4); // Favorise les valeurs basses
-            double distance = distanceRatio * range * (0.3 + progress * 0.7); // Commence court, s'allonge
+            double distanceRatio = Math.pow(serverLevel.random.nextDouble(), 0.2); // Even more particles closer to source
+            double distance = distanceRatio * range * (0.1 + progress * 0.9);
 
-            // Dispersion qui augmente avec la distance (effet cône)
-            double baseSpread = 0.1;
-            double distanceSpread = (distance / range) * 0.8; // Plus c'est loin, plus ça se disperse
-            double totalSpread = baseSpread + distanceSpread + progress * 0.3;
+            // Enhanced cone effect - much more pronounced spreading
+            double baseSpread = 0.05; // Tighter at base
+            double distanceSpread = (distance / range) * 2.5; // Much stronger cone expansion
+            double progressSpread = progress * 0.8; // More spread with progress
+            double totalSpread = baseSpread + distanceSpread + progressSpread;
+
+            // Create more pronounced cone shape
+            double coneAngle = Math.PI * 0.3 * (distance / range); // 54 degrees max cone
+            double randomAngle = serverLevel.random.nextDouble() * Math.PI * 2;
+            double coneRadius = Math.tan(coneAngle) * distance;
+            double particleRadius = serverLevel.random.nextDouble() * coneRadius;
 
             Vec3 basePosition = origin.add(direction.scale(distance));
 
-            // Dispersion conique naturelle
-            Vec3 randomDirection = new Vec3(
-                    (serverLevel.random.nextGaussian()) * totalSpread,
-                    (serverLevel.random.nextGaussian()) * totalSpread * 0.7, // Moins de dispersion verticale
-                    (serverLevel.random.nextGaussian()) * totalSpread
-            );
+            // Calculate perpendicular vectors for cone distribution
+            Vec3 up = new Vec3(0, 1, 0);
+            Vec3 right = direction.cross(up).normalize();
+            Vec3 actualUp = right.cross(direction).normalize();
 
-            Vec3 particlePosition = basePosition.add(randomDirection);
+            // Position particle within the cone
+            Vec3 coneOffset = right.scale(Math.cos(randomAngle) * particleRadius)
+                    .add(actualUp.scale(Math.sin(randomAngle) * particleRadius));
 
-            // Vitesse des particules avec turbulence
-            Vec3 baseVelocity = direction.scale(0.3 + serverLevel.random.nextDouble() * 0.4);
+            Vec3 particlePosition = basePosition.add(coneOffset);
+
+            // Enhanced particle velocity with cone-based direction
+            Vec3 coneDirection = particlePosition.subtract(origin).normalize();
+            Vec3 baseVelocity = coneDirection.scale(0.5 + serverLevel.random.nextDouble() * 0.7);
             Vec3 turbulence = new Vec3(
                     (serverLevel.random.nextDouble() - 0.5) * 0.2,
                     (serverLevel.random.nextDouble() - 0.5) * 0.15,
@@ -255,76 +256,94 @@ public class KatonAbility extends Ability implements Ability.Cooldown, Ability.C
             );
             Vec3 finalVelocity = baseVelocity.add(turbulence);
 
-            // Densité de particules selon la distance (plus dense au début)
-            double densityFactor = 1.0 - (distance / range) * 0.6;
+            // Enhanced particle density based on distance and cone position
+            double densityFactor = 1.5 - (distance / range) * 0.4;
+            double coneDensity = 1.0 - (particleRadius / Math.max(coneRadius, 0.1)) * 0.3;
 
-            // Particules de flammes principales avec variation de densité
-            if (serverLevel.random.nextDouble() < densityFactor) {
+            // Main flame particles with enhanced density
+            if (serverLevel.random.nextDouble() < densityFactor * coneDensity) {
                 serverLevel.sendParticles(
                         ParticleTypes.FLAME,
                         particlePosition.x, particlePosition.y, particlePosition.z,
-                        1, finalVelocity.x, finalVelocity.y, finalVelocity.z, 0.02
+                        2, finalVelocity.x, finalVelocity.y, finalVelocity.z, 0.04
                 );
             }
 
-            // Particules de lave concentrées au centre du jet
-            if (totalSpread < 0.4 && serverLevel.random.nextFloat() < 0.8 * densityFactor) {
+            // Enhanced lava particles concentrated at the center of the cone
+            if (particleRadius < coneRadius * 0.4 && serverLevel.random.nextFloat() < 0.9 * densityFactor) {
                 serverLevel.sendParticles(
                         ParticleTypes.LAVA,
                         particlePosition.x, particlePosition.y, particlePosition.z,
-                        1, finalVelocity.x * 0.5, -0.05 + finalVelocity.y * 0.3, finalVelocity.z * 0.5, 0.01
+                        1, finalVelocity.x * 0.6, -0.03 + finalVelocity.y * 0.4, finalVelocity.z * 0.6, 0.02
                 );
             }
 
-            // Fumée dispersée sur les bords
-            if (totalSpread > 0.3 && serverLevel.random.nextFloat() < 0.4) {
+            // Enhanced smoke on the outer edges of the cone
+            if (particleRadius > coneRadius * 0.3 && serverLevel.random.nextFloat() < 0.6) {
                 serverLevel.sendParticles(
                         ParticleTypes.LARGE_SMOKE,
                         particlePosition.x, particlePosition.y, particlePosition.z,
-                        1, finalVelocity.x * 0.1, finalVelocity.y * 0.1 + 0.05, finalVelocity.z * 0.1, 0.005
+                        1, finalVelocity.x * 0.15, finalVelocity.y * 0.15 + 0.08, finalVelocity.z * 0.15, 0.008
                 );
             }
 
-            // Braises qui tombent (effet réaliste)
-            if (distance > range * 0.3 && serverLevel.random.nextFloat() < 0.3) {
+            // More falling embers for realistic effect
+            if (distance > range * 0.2 && serverLevel.random.nextFloat() < 0.5) {
                 serverLevel.sendParticles(
                         ParticleTypes.FALLING_LAVA,
                         particlePosition.x, particlePosition.y, particlePosition.z,
-                        1, (serverLevel.random.nextDouble() - 0.5) * 0.1, -0.2, (serverLevel.random.nextDouble() - 0.5) * 0.1, 0.02
+                        1, (serverLevel.random.nextDouble() - 0.5) * 0.15, -0.25, (serverLevel.random.nextDouble() - 0.5) * 0.15, 0.03
+                );
+            }
+
+            // Additional small flame particles for intensity (removed blue soul fire)
+            if (progress > 0.5 && serverLevel.random.nextFloat() < 0.4) {
+                serverLevel.sendParticles(
+                        ParticleTypes.SMALL_FLAME,
+                        particlePosition.x, particlePosition.y, particlePosition.z,
+                        1, finalVelocity.x * 0.9, finalVelocity.y * 0.9, finalVelocity.z * 0.9, 0.06
                 );
             }
         }
 
-        // Particules supplémentaires à la source pour l'effet "sortie de bouche"
-        for (int i = 0; i < 8; i++) {
+        // Enhanced source particles for "mouth breathing" effect
+        for (int i = 0; i < 12; i++) {
             Vec3 sourceOffset = new Vec3(
-                    (serverLevel.random.nextDouble() - 0.5) * 0.3,
-                    (serverLevel.random.nextDouble() - 0.5) * 0.2,
-                    (serverLevel.random.nextDouble() - 0.5) * 0.3
+                    (serverLevel.random.nextDouble() - 0.5) * 0.4,
+                    (serverLevel.random.nextDouble() - 0.5) * 0.25,
+                    (serverLevel.random.nextDouble() - 0.5) * 0.4
             );
-            Vec3 sourcePos = origin.add(direction.scale(0.5)).add(sourceOffset);
+            Vec3 sourcePos = origin.add(direction.scale(0.8)).add(sourceOffset);
 
             serverLevel.sendParticles(
                     ParticleTypes.FLAME,
                     sourcePos.x, sourcePos.y, sourcePos.z,
-                    1, direction.x * 0.8, direction.y * 0.8, direction.z * 0.8, 0.1
+                    2, direction.x * 1.0, direction.y * 1.0, direction.z * 1.0, 0.12
             );
         }
     }
 
     private void createEnvironmentalEffects(ServerLevel serverLevel, Vec3 origin, Vec3 direction, float range) {
-        // Brûler le sol sur plusieurs points
-        for (int i = 1; i <= range; i += 2) {
+        // Enhanced ground burning over multiple points
+        for (int i = 1; i <= range; i += 1.5) {
             Vec3 flamePosition = origin.add(direction.scale(i));
             BlockPos flamePos = new BlockPos((int) flamePosition.x, (int) flamePosition.y, (int) flamePosition.z);
             BlockPos groundPos = flamePos.below();
 
-            // Créer du feu sur le sol
-            if (serverLevel.isEmptyBlock(flamePos) && !serverLevel.isEmptyBlock(groundPos)) {
-                serverLevel.setBlock(flamePos, Blocks.FIRE.defaultBlockState(), 3);
+            // Create fire on the ground with spread
+            for (int x = -1; x <= 1; x++) {
+                for (int z = -1; z <= 1; z++) {
+                    BlockPos spreadPos = flamePos.offset(x, 0, z);
+                    BlockPos spreadGround = spreadPos.below();
+
+                    if (serverLevel.isEmptyBlock(spreadPos) && !serverLevel.isEmptyBlock(spreadGround)
+                            && serverLevel.random.nextFloat() < 0.7) {
+                        serverLevel.setBlock(spreadPos, Blocks.FIRE.defaultBlockState(), 3);
+                    }
+                }
             }
 
-            // Faire fondre certains blocs (neige, glace, etc.)
+            // Enhanced block melting
             if (serverLevel.random.nextDouble() < BLOCK_MELT_CHANCE) {
                 meltSurroundingBlocks(serverLevel, flamePos);
             }
@@ -332,29 +351,36 @@ public class KatonAbility extends Ability implements Ability.Cooldown, Ability.C
     }
 
     private void meltSurroundingBlocks(ServerLevel serverLevel, BlockPos center) {
-        for (int x = -1; x <= 1; x++) {
-            for (int y = -1; y <= 1; y++) {
-                for (int z = -1; z <= 1; z++) {
+        // Enhanced melting radius
+        for (int x = -2; x <= 2; x++) {
+            for (int y = -1; y <= 2; y++) {
+                for (int z = -2; z <= 2; z++) {
                     BlockPos pos = center.offset(x, y, z);
                     BlockState state = serverLevel.getBlockState(pos);
 
-                    // Faire fondre la neige et la glace
+                    // Enhanced melting with more block types
                     if (state.is(Blocks.SNOW) || state.is(Blocks.SNOW_BLOCK)) {
                         serverLevel.setBlock(pos, Blocks.AIR.defaultBlockState(), 3);
-                    } else if (state.is(Blocks.ICE)) {
+                        // Add steam particles
+                        serverLevel.sendParticles(ParticleTypes.CLOUD,
+                                pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5,
+                                3, 0.2, 0.2, 0.2, 0.05);
+                    } else if (state.is(Blocks.ICE) || state.is(Blocks.PACKED_ICE)) {
                         serverLevel.setBlock(pos, Blocks.WATER.defaultBlockState(), 3);
                     } else if (state.is(Blocks.FROSTED_ICE)) {
                         serverLevel.setBlock(pos, Blocks.WATER.defaultBlockState(), 3);
+                    } else if (state.is(Blocks.POWDER_SNOW)) {
+                        serverLevel.setBlock(pos, Blocks.AIR.defaultBlockState(), 3);
                     }
                 }
             }
         }
     }
 
-    private void applyFireDamage(ServerLevel serverLevel, Player player, Vec3 origin, Vec3 direction, float range, float damage) {
-        // Zone d'effet plus large et progressive
+    private void applyEnhancedFireDamage(ServerLevel serverLevel, Player player, Vec3 origin, Vec3 direction, float range, float damage) {
+        // Enhanced damage zone - wider and more progressive
         Vec3 endPoint = origin.add(direction.scale(range));
-        AABB damageZone = new AABB(origin, endPoint).inflate(1.5);
+        AABB damageZone = new AABB(origin, endPoint).inflate(2.0); // Increased damage radius
 
         List<LivingEntity> targets = serverLevel.getEntitiesOfClass(
                 LivingEntity.class,
@@ -363,58 +389,72 @@ public class KatonAbility extends Ability implements Ability.Cooldown, Ability.C
         );
 
         for (LivingEntity target : targets) {
-            // Calculer la distance pour ajuster les dégâts
+            // Calculate distance to adjust damage
             double distance = target.position().distanceTo(origin);
-            float adjustedDamage = damage * (1.0F - (float) (distance / (range + 2.0F)));
-            adjustedDamage = Math.max(adjustedDamage, damage * 0.3F); // Dégâts minimum
+            float adjustedDamage = damage * (1.2F - (float) (distance / (range + 3.0F))); // Enhanced damage calculation
+            adjustedDamage = Math.max(adjustedDamage, damage * 0.4F); // Higher minimum damage
 
-            // Appliquer les dégâts avec source personnalisée
+            // Apply damage with custom source
             DamageSource fireSource = player.damageSources().playerAttack(player);
             target.hurt(fireSource, adjustedDamage);
 
-            // Effets sur la cible
-            target.setSecondsOnFire(12 + serverLevel.random.nextInt(8)); // 12-20 secondes
+            // Enhanced effects on target
+            target.setSecondsOnFire(15 + serverLevel.random.nextInt(10)); // 15-25 seconds burning
 
-            // Knockback amélioré basé sur la distance
+            // Enhanced knockback based on distance
             Vec3 knockbackDirection = target.position()
                     .subtract(player.position())
                     .normalize();
 
-            double knockbackStrength = 0.5 - (distance / range) * 0.3;
-            knockbackStrength = Math.max(knockbackStrength, 0.1);
+            double knockbackStrength = 0.8 - (distance / range) * 0.4; // Stronger knockback
+            knockbackStrength = Math.max(knockbackStrength, 0.2);
 
             target.push(
                     knockbackDirection.x * knockbackStrength,
-                    0.3 + knockbackStrength * 0.2,
+                    0.4 + knockbackStrength * 0.3, // Higher vertical knockback
                     knockbackDirection.z * knockbackStrength
             );
 
-            // Ajouter à la liste des entités déjà touchées (reset tous les DAMAGE_INTERVAL ticks)
+            // Add to damaged entities list (reset every DAMAGE_INTERVAL ticks)
             damagedEntities.add(target.getId());
 
-            // Particules d'impact
-            for (int i = 0; i < 10; i++) {
+            // Enhanced impact particles
+            for (int i = 0; i < 15; i++) {
                 Vec3 targetPos = target.position();
                 serverLevel.sendParticles(
                         ParticleTypes.FLAME,
                         targetPos.x, targetPos.y + target.getBbHeight() / 2, targetPos.z,
+                        2,
+                        (serverLevel.random.nextDouble() - 0.5) * 0.8,
+                        serverLevel.random.nextDouble() * 0.5,
+                        (serverLevel.random.nextDouble() - 0.5) * 0.8,
+                        0.04
+                );
+            }
+
+            // Additional impact particles for enhanced effect
+            for (int i = 0; i < 8; i++) {
+                Vec3 targetPos = target.position();
+                serverLevel.sendParticles(
+                        ParticleTypes.LAVA,
+                        targetPos.x, targetPos.y + target.getBbHeight() / 2, targetPos.z,
                         1,
-                        (serverLevel.random.nextDouble() - 0.5) * 0.5,
-                        serverLevel.random.nextDouble() * 0.3,
-                        (serverLevel.random.nextDouble() - 0.5) * 0.5,
+                        (serverLevel.random.nextDouble() - 0.5) * 0.4,
+                        serverLevel.random.nextDouble() * 0.2,
+                        (serverLevel.random.nextDouble() - 0.5) * 0.4,
                         0.02
                 );
             }
 
-            // Son d'impact
+            // Enhanced impact sound
             serverLevel.playSound(
                     null, target.getX(), target.getY(), target.getZ(),
                     SoundEvents.FIRE_EXTINGUISH,
-                    SoundSource.PLAYERS, 1.0F, 1.5F
+                    SoundSource.PLAYERS, 1.5F, 1.3F
             );
         }
 
-        // Clear damaged entities periodically pour permettre des dégâts continus
+        // Clear damaged entities periodically to allow continuous damage
         if (serverLevel.getGameTime() % (DAMAGE_INTERVAL * 2) == 0) {
             damagedEntities.clear();
         }
