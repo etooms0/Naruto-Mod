@@ -78,36 +78,32 @@ public class KatonAbility extends Ability implements Ability.Cooldown, Ability.C
                 .map(r -> r.location().getPath())
                 .orElse("");
 
+        // Vérification stricte de l'équipement - bloque TOUT si pas équipé
         if (!data.getSlotData().isEquipped(id)) {
             player.displayClientMessage(
-                    Component.literal("Cette technique n'est pas équipée dans votre deck!")
+                    Component.literal("This jutsu is not in your deck!")
                             .withStyle(ChatFormatting.RED),
                     true
             );
+            // Arrêter immédiatement l'utilisation si elle a commencé
+            player.stopUsingItem();
             return false;
         }
 
         // Vérification du chakra minimum requis
         if (data.getChakra() < CHAKRA_COST_PER_TICK * 3) {
             player.displayClientMessage(
-                    Component.literal("Chakra insuffisant pour utiliser Katon!")
+                    Component.literal("Not enough chakra")
                             .withStyle(ChatFormatting.BLUE),
                     true
             );
+            player.stopUsingItem();
             return false;
         }
 
         return true;
     }
 
-    public InteractionResultHolder<ItemStack> use(Level world, Player player, InteractionHand hand) {
-        if (!world.isClientSide) {
-            // Reset du tracking des entités à chaque utilisation
-            damagedEntities.clear();
-        }
-        player.startUsingItem(hand);
-        return InteractionResultHolder.consume(player.getItemInHand(hand));
-    }
 
     public int getUseDuration(ItemStack stack) {
         return DURATION_TICKS;
@@ -130,7 +126,7 @@ public class KatonAbility extends Ability implements Ability.Cooldown, Ability.C
             if (data.getChakra() <= 0) {
                 player.stopUsingItem();
                 player.displayClientMessage(
-                        Component.literal("Plus assez de chakra!")
+                        Component.literal("No chakra")
                                 .withStyle(ChatFormatting.BLUE),
                         true
                 );
@@ -226,56 +222,93 @@ public class KatonAbility extends Ability implements Ability.Cooldown, Ability.C
     }
 
     private void generateFireParticles(ServerLevel serverLevel, Vec3 origin, Vec3 direction, float range, double progress) {
-        int particleCount = PARTICLES_PER_TICK + (int) (progress * 15); // Plus de particules avec le temps
+        int particleCount = PARTICLES_PER_TICK + (int) (progress * 15);
 
+        // Effet lance-flammes avec dispersion progressive
         for (int i = 0; i < particleCount; i++) {
-            // Distribution des particules le long du jet avec variation
-            double distance = serverLevel.random.nextDouble() * range;
-            double spread = 0.3 + progress * 0.2; // Spread qui augmente avec le temps
+            // Distance avec distribution favorisant le début du jet
+            double distanceRatio = Math.pow(serverLevel.random.nextDouble(), 0.4); // Favorise les valeurs basses
+            double distance = distanceRatio * range * (0.3 + progress * 0.7); // Commence court, s'allonge
+
+            // Dispersion qui augmente avec la distance (effet cône)
+            double baseSpread = 0.1;
+            double distanceSpread = (distance / range) * 0.8; // Plus c'est loin, plus ça se disperse
+            double totalSpread = baseSpread + distanceSpread + progress * 0.3;
 
             Vec3 basePosition = origin.add(direction.scale(distance));
-            Vec3 offset = new Vec3(
-                    (serverLevel.random.nextDouble() - 0.5) * spread,
-                    (serverLevel.random.nextDouble() - 0.5) * spread,
-                    (serverLevel.random.nextDouble() - 0.5) * spread
+
+            // Dispersion conique naturelle
+            Vec3 randomDirection = new Vec3(
+                    (serverLevel.random.nextGaussian()) * totalSpread,
+                    (serverLevel.random.nextGaussian()) * totalSpread * 0.7, // Moins de dispersion verticale
+                    (serverLevel.random.nextGaussian()) * totalSpread
             );
 
-            Vec3 particlePosition = basePosition.add(offset);
-            Vec3 velocity = direction.add(offset.normalize().scale(0.1));
+            Vec3 particlePosition = basePosition.add(randomDirection);
 
-            // Particules de flammes principales
-            serverLevel.sendParticles(
-                    ParticleTypes.FLAME,
-                    particlePosition.x, particlePosition.y, particlePosition.z,
-                    1, velocity.x * 0.4, velocity.y * 0.4, velocity.z * 0.4, 0.05
+            // Vitesse des particules avec turbulence
+            Vec3 baseVelocity = direction.scale(0.3 + serverLevel.random.nextDouble() * 0.4);
+            Vec3 turbulence = new Vec3(
+                    (serverLevel.random.nextDouble() - 0.5) * 0.2,
+                    (serverLevel.random.nextDouble() - 0.5) * 0.15,
+                    (serverLevel.random.nextDouble() - 0.5) * 0.2
             );
+            Vec3 finalVelocity = baseVelocity.add(turbulence);
 
-            // Particules de lave pour l'intensité
-            if (serverLevel.random.nextFloat() < 0.7) {
+            // Densité de particules selon la distance (plus dense au début)
+            double densityFactor = 1.0 - (distance / range) * 0.6;
+
+            // Particules de flammes principales avec variation de densité
+            if (serverLevel.random.nextDouble() < densityFactor) {
+                serverLevel.sendParticles(
+                        ParticleTypes.FLAME,
+                        particlePosition.x, particlePosition.y, particlePosition.z,
+                        1, finalVelocity.x, finalVelocity.y, finalVelocity.z, 0.02
+                );
+            }
+
+            // Particules de lave concentrées au centre du jet
+            if (totalSpread < 0.4 && serverLevel.random.nextFloat() < 0.8 * densityFactor) {
                 serverLevel.sendParticles(
                         ParticleTypes.LAVA,
                         particlePosition.x, particlePosition.y, particlePosition.z,
-                        1, 0, -0.1, 0, 0.02
+                        1, finalVelocity.x * 0.5, -0.05 + finalVelocity.y * 0.3, finalVelocity.z * 0.5, 0.01
                 );
             }
 
-            // Fumée et braises
-            if (serverLevel.random.nextFloat() < 0.5) {
+            // Fumée dispersée sur les bords
+            if (totalSpread > 0.3 && serverLevel.random.nextFloat() < 0.4) {
                 serverLevel.sendParticles(
                         ParticleTypes.LARGE_SMOKE,
                         particlePosition.x, particlePosition.y, particlePosition.z,
-                        1, velocity.x * 0.1, velocity.y * 0.1, velocity.z * 0.1, 0.01
+                        1, finalVelocity.x * 0.1, finalVelocity.y * 0.1 + 0.05, finalVelocity.z * 0.1, 0.005
                 );
             }
 
-            // Particules spéciales à haute intensité
-            if (progress > 0.5 && serverLevel.random.nextFloat() < 0.3) {
+            // Braises qui tombent (effet réaliste)
+            if (distance > range * 0.3 && serverLevel.random.nextFloat() < 0.3) {
                 serverLevel.sendParticles(
-                        ParticleTypes.SOUL_FIRE_FLAME,
+                        ParticleTypes.FALLING_LAVA,
                         particlePosition.x, particlePosition.y, particlePosition.z,
-                        1, velocity.x * 0.2, velocity.y * 0.2, velocity.z * 0.2, 0.03
+                        1, (serverLevel.random.nextDouble() - 0.5) * 0.1, -0.2, (serverLevel.random.nextDouble() - 0.5) * 0.1, 0.02
                 );
             }
+        }
+
+        // Particules supplémentaires à la source pour l'effet "sortie de bouche"
+        for (int i = 0; i < 8; i++) {
+            Vec3 sourceOffset = new Vec3(
+                    (serverLevel.random.nextDouble() - 0.5) * 0.3,
+                    (serverLevel.random.nextDouble() - 0.5) * 0.2,
+                    (serverLevel.random.nextDouble() - 0.5) * 0.3
+            );
+            Vec3 sourcePos = origin.add(direction.scale(0.5)).add(sourceOffset);
+
+            serverLevel.sendParticles(
+                    ParticleTypes.FLAME,
+                    sourcePos.x, sourcePos.y, sourcePos.z,
+                    1, direction.x * 0.8, direction.y * 0.8, direction.z * 0.8, 0.1
+            );
         }
     }
 
